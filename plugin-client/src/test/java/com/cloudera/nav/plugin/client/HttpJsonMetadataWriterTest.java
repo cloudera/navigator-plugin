@@ -63,7 +63,7 @@ public class HttpJsonMetadataWriterTest {
   @Test
   public void testWriteBasic() throws IOException {
     Source source = new Source("HDFS-1", SourceType.HDFS, "Cluster",
-        "http://ns1");
+        "http://ns1", "0");
     HdfsEntity entity = new HdfsEntity();
     entity.setSourceId(source.getIdentity());
     entity.setFileSystemPath("/user/test");
@@ -95,7 +95,7 @@ public class HttpJsonMetadataWriterTest {
   @Test
   public void testWriteMRelation() throws IOException {
     Source source = new Source("ExternalApp", SourceType.PLUGIN, "ExternalApp",
-        "http://appHost:port");
+        "http://appHost:port", "0");
     CustomOperationExecution exec = prepExec(source);
     HttpJsonMetadataWriter mWriter = new HttpJsonMetadataWriter(config,
         mockWriter, mockConn);

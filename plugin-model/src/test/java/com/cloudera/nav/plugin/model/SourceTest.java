@@ -27,10 +27,10 @@ public class SourceTest {
     String sourceName = "mySource";
     String clusterName = "myCluster";
     Source src = new Source(sourceName, SourceType.NONE,
-        clusterName, "http://host:port");
+        clusterName, "http://host:port", "5");
     assertEquals(MD5IdGenerator.generateIdentity(clusterName, sourceName),
         src.getIdentity());
     assertEquals(src, new Source(sourceName, SourceType.HDFS,
-        clusterName, "http://newHost:newPort"));
+        clusterName, "http://newHost:newPort", "5"));
   }
 }
