@@ -21,6 +21,7 @@ public class GetAllUpdatedResults {
         UpdatedResults resultsNoMarker = client.getAllUpdated();
         String marker1 = resultsNoMarker.getMarker();
         Iterable<Map<String, Object>> entities1 = resultsNoMarker.getEntities();
+        System.out.println("ENTITIES:\n" + entities1);
         Iterable<Map<String, Object>> relations1 = resultsNoMarker.getRelations();
 
         UpdatedResults resultsIncremental = client.getAllUpdated(marker1);

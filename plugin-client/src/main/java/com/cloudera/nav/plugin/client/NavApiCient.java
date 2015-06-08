@@ -78,12 +78,17 @@ public class NavApiCient {
    * @return a collection of available sources
    */
   public Collection<Source> getAllSources() {
+    System.out.println("here");
     RestTemplate restTemplate = new RestTemplate();
     String url = getUrl();
     HttpHeaders headers = getAuthHeaders();
+    System.out.println(headers);
     HttpEntity<String> request = new HttpEntity<String>(headers);
+    Class<SourceAttrs[]> sourceAttrsClass = SourceAttrs[].class;
     ResponseEntity<SourceAttrs[]> response = restTemplate.exchange(url,
-        HttpMethod.GET, request, SourceAttrs[].class);
+        HttpMethod.GET, request, sourceAttrsClass);
+//    ResponseEntity<SourceAttrs[]> response = restTemplate.getForEntity(url, )
+    System.out.println(response);
     Collection<Source> sources = Lists.newArrayList();
     for (SourceAttrs info : response.getBody()) {
       sources.add(info.createSource());
@@ -99,7 +104,7 @@ public class NavApiCient {
     Map<String, Integer> currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      String queryString = "*";
+      String queryString = "";
       updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
       return updatedResults;
     } catch (IOException e){
@@ -134,6 +139,7 @@ public class NavApiCient {
     Map<String, Integer> currentMarker = getCurrentMarker();
     ParameterizedTypeReference<Map<String, Object>[]> mapRef = new ParameterizedTypeReference<Map<String, Object>[]>(){};
     Map<String, Object>[] entityResult = navResponse("entities", queryString, mapRef);
+    System.out.println("ENTITIES: \n"+ entityResult.toString());
     Map<String, Object>[] relationsResult = navResponse("relations", queryString, mapRef);
     UpdatedResults res = new UpdatedResults(markerRep, Arrays.asList(entityResult), Arrays.asList(relationsResult));
     return res;
@@ -166,7 +172,7 @@ public class NavApiCient {
     HashMap<String, Integer> newMarker = new HashMap<>();
     for (Source source : sources){
       String id = source.getIdentity();
-      Integer sourceExtractIteration = Integer.parseInt(source.getSourceExtractIteration());
+      Integer sourceExtractIteration = source.getSourceExtractIteration();
       newMarker.put(id, sourceExtractIteration);
     }
     return newMarker;
@@ -242,7 +248,7 @@ public class NavApiCient {
     // form the url string to request all entities with type equal to SOURCE
     String baseNavigatorUrl = config.getNavigatorUrl();
     String entities = joinUrlPath(baseNavigatorUrl, "entities");
-    return String.format("%s?query=%s", entities, SOURCE_QUERY);
+    return String.format("%s?query=%s%s", entities, SOURCE_QUERY, "&debugQuery=on");
   }
 
   /**
@@ -253,7 +259,7 @@ public class NavApiCient {
   private String getUrl(String type, String queryString) {
     String baseNavigatorUrl = config.getNavigatorUrl();
     String typeUrl = joinUrlPath(baseNavigatorUrl, type);
-    return String.format("%s?query=?%s", typeUrl, queryString);
+    return joinUrlPath(typeUrl, queryString);
   }
 
   private String joinUrlPath(String base, String component) {
