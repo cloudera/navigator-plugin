@@ -50,6 +50,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * An API client to communicate with Navigator to register and validate
  * metadata models
+ *
+ * Pipeline:   getAllUpdated->UpdatedResults->getAllUpdated(UpdatedResults.marker) => UpdatedResults
+ * Function structure:
+ * getAllUpdated: getCurrentMarker->getExtractorQueryString, aggUpdatedResults<-getAllPages(getUrl())<-navResponse<-query string
  */
 public class NavApiCient {
 
@@ -137,6 +141,12 @@ public class NavApiCient {
     }
   }
 
+  /** Constructs a query in Solr syntax as "<extractorRunId1> OR <extractorRunId2> ..." for all extraction iterations per source between m1 and m2
+   *
+   * @param m1
+   * @param m2
+   * @return
+   */
   private String getExtractorQueryString(Map<String, Integer> m1, Map<String, Integer> m2){
     String queryString = "query=extractorRunId:(";
     for (String key: m1.keySet()){
@@ -148,16 +158,28 @@ public class NavApiCient {
     return queryString.substring(0, queryString.length()-4)+")";
   }
 
+  /** Constructs an UpdatedResults object with results of getAllPages for entities and relations, and the marker used to generate these results.
+   *
+   * @param markerRep
+   * @param queryString
+   * @return
+   */
   public UpdatedResults aggUpdatedResults(String markerRep, String queryString){
     UpdatedResults updatedResults;
-    ParameterizedTypeReference<ResultsBatch> resultClass = new ParameterizedTypeReference<ResultsBatch>(){};
-    List<Map<String, Object>> entities = getAllPages("entities", queryString, resultClass);
-    List<Map<String, Object>> relations = getAllPages("relations", queryString, resultClass);
+    List<Map<String, Object>> entities = getAllPages("entities", queryString);
+    List<Map<String, Object>> relations = getAllPages("relations", queryString);
     updatedResults = new UpdatedResults(markerRep, entities, relations);
     return updatedResults;
   }
 
-  public List<Map<String, Object>> getAllPages(String type, String queryString, ParameterizedTypeReference<ResultsBatch> resultClass){
+  /** Constructs the url from a type (entity or relation), query, and cursorMark. Iterates through cursor marks and returns all updated entities and relations.
+   *
+   * @param type
+   * @param queryString
+   * @return
+   */
+  public List<Map<String, Object>> getAllPages(String type, String queryString){
+    ParameterizedTypeReference<ResultsBatch> resultClass = new ParameterizedTypeReference<ResultsBatch>(){};
     List<Map<String, Object>> result = new ArrayList<>();
     boolean done = false;
     String cursorMark="*";
@@ -166,7 +188,7 @@ public class NavApiCient {
       uri.replaceQueryParam("cursorMark", cursorMark);
       uri.fragment(null);
       URI fullUrl = uri.build().toUri();
-      ResultsBatch response = navResponse(type, fullUrl, resultClass);
+      ResultsBatch response = navResponse(fullUrl, resultClass);
       result.addAll(Arrays.asList(response.getResults()));
       String newCursorMark = response.getCursorMark();
       if(newCursorMark.equals(cursorMark)){
@@ -177,15 +199,15 @@ public class NavApiCient {
     return result;
   }
 
-  /**
-   *extractorRunId:("4fbdadc6899638782fc8cb626176dc7b##1253" OR "a09b0233cc58ff7d601eaa68673a20c6##1248" OR
-   * @param type
+  /**Makes the HTTP call from a given url to retrieve a ResultsBatch object that represents the set of elements that fit
+   * the query parameters (extractorRunIds and cursorMark)
+   *
    * @param resultClass
    * @param <T>
    * @return
    */
   //This method has the restTemplate calls --> mock it
-  public <T> T navResponse(String type, URI url, ParameterizedTypeReference<T> resultClass){
+  public <T> T navResponse(URI url, ParameterizedTypeReference<T> resultClass){
     RestTemplate restTemplate = new RestTemplate();
     HttpHeaders headers = getAuthHeaders();
     HttpEntity<String> request =new HttpEntity<String>(headers);
@@ -194,7 +216,7 @@ public class NavApiCient {
     return responseResult;
   }
 
-  /**
+  /** Generate marker from each source and its sourceExtractIteration
    *
    * @return
    */

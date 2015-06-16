@@ -15,9 +15,10 @@ public class ResultsBatch  {
 
   public Map<String, Object>[] getResults() { return results;  }
 
+  public void setResults(Map<String, Object>[] results)  { this.results = results; }
+
   public String getCursorMark(){ return cursorMark;  }
 
   public void setCursorMark(String cursorMark) { this.cursorMark = cursorMark; }
 
-  public void setResults(Map<String, Object>[] results)  { this.results = results; }
 }
