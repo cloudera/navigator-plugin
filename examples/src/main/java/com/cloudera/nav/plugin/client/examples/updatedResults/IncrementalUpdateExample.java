@@ -26,16 +26,17 @@ public class IncrementalUpdateExample {
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
-    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":1500,\"4fbdadc6899638782fc8cb626176dc7b\":1500," +
-                    "\"efd3b52ca1bebb19990a0a92c7ff6b89\":1500,\"a063e69e6c0660353dc378c836837935\":1500,\"a09b0233cc58ff7d601eaa68673a20c6\":1500}";
+    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":1611,\"4fbdadc6899638782fc8cb626176dc7b\":1611," +
+                    "\"efd3b52ca1bebb19990a0a92c7ff6b89\":1611,\"a063e69e6c0660353dc378c836837935\":1611,\"a09b0233cc58ff7d601eaa68673a20c6\":1611}";
 
     UpdatedResults incrementResults;
+    IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
     if (mostRecentMarker != null) {
       System.out.println("used existing");
-      incrementResults = client.getAllUpdated(mostRecentMarker);
+      incrementResults = ies.getAllUpdated(mostRecentMarker);
     } else {
       System.out.println("used manual");
-      incrementResults = client.getAllUpdated(marker);
+      incrementResults = ies.getAllUpdated(marker);
     }
 
     mostRecentMarker = incrementResults.getMarker();

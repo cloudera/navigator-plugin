@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class UpdatedResults {
   private String marker;
-  private Iterable<Map<String, Object>> entities;
+  private Iterable<Map<String, Object>> entities; //use <?>
   private Iterable<Map<String, Object>> relations;
 
   public UpdatedResults(String marker, Iterable<Map<String, Object>> entities,

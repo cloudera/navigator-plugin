@@ -28,7 +28,8 @@ public class GetAllUpdatedResults {
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
-    UpdatedResults resultsNoMarker = client.getAllUpdated();
+    IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
+    UpdatedResults resultsNoMarker = ies.getAllUpdated();
     String marker1 = resultsNoMarker.getMarker();
     firstMarker = marker1;
     System.out.println(firstMarker.toString());
@@ -38,14 +39,6 @@ public class GetAllUpdatedResults {
     Iterable<Map<String, Object>> relations1 = resultsNoMarker.getRelations();
     System.out.println("\n Number of relations: " + Iterables.size(relations1));
 
-//    UpdatedResults resultsIncremental = client.getAllUpdated(marker1);
-//    String marker2 = resultsIncremental.getMarker();
-//    incrementMarker = marker2;
-//
-//    Iterable<Map<String, Object>> entities2 = resultsIncremental.getEntities();
-//    Iterable<Map<String, Object>> relations2 = resultsIncremental.getRelations();
-//    System.out.println("\n Number of entities2: " + Iterables.size(entities2));
-//    System.out.println("\n Number of relations2: " + Iterables.size(relations2));
 
   }
 }

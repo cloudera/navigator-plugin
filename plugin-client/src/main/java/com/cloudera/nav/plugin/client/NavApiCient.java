@@ -51,9 +51,6 @@ import org.springframework.web.util.UriComponentsBuilder;
  * An API client to communicate with Navigator to register and validate
  * metadata models
  *
- * Pipeline:   getAllUpdated->UpdatedResults->getAllUpdated(UpdatedResults.marker) => UpdatedResults
- * Function structure:
- * getAllUpdated: getCurrentMarker->getExtractorQueryString, aggUpdatedResults<-getAllPages(getUrl())<-navResponse<-query string
  */
 public class NavApiCient {
 
@@ -87,8 +84,8 @@ public class NavApiCient {
   public Collection<Source> getAllSources() {
 //    System.out.println("here");
     RestTemplate restTemplate = new RestTemplate();
-    String url = getUrl();
-    HttpHeaders headers = getAuthHeaders();
+    String url = ClientUtils.getSourceUrl(config, SOURCE_QUERY);
+    HttpHeaders headers = ClientUtils.getAuthHeaders(config);
 //    System.out.println(headers);
     HttpEntity<String> request = new HttpEntity<String>(headers);
     Class<SourceAttrs[]> sourceAttrsClass = SourceAttrs[].class;
@@ -101,137 +98,6 @@ public class NavApiCient {
       sources.add(info.createSource());
     }
     return sources;
-  }
-  /** Returns all of the entities and relations in the database, plus a marker to denote when this search took place
-   *
-   * @return
-   */
-  public UpdatedResults getAllUpdated(){
-    UpdatedResults updatedResults;
-    Map<String, Integer> currentMarker = getCurrentMarker();
-    try {
-      String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      String queryString = "query=identity:*";
-      updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
-      return updatedResults;
-    } catch (IOException e){
-//      System.err.println(e.getMessage());
-      throw Throwables.propagate(e);
-    }
-  }
-
-  /**Returns all of the entities and relations in the database that have been updated or added since the source iterations indicated by the marker
-   *
-   * @param markerRep JSON representation of sourceId : sourceExtractIteration
-   * @return
-   */
-
-  public UpdatedResults getAllUpdated(String markerRep){
-    UpdatedResults updatedResults;
-    Map<String, Integer> currentMarker = getCurrentMarker();
-    try {
-      String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      Map<String, Integer> marker = new ObjectMapper().readValue(markerRep, new TypeReference<Map<String, Integer>>(){});
-      String extractorQueryString = getExtractorQueryString(marker, currentMarker);
-      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString);
-      return updatedResults;
-    } catch (IOException e) {
-      System.err.println(e.getMessage());
-      throw Throwables.propagate(e);
-    }
-  }
-
-  /** Constructs a query in Solr syntax as "<extractorRunId1> OR <extractorRunId2> ..." for all extraction iterations per source between m1 and m2
-   *
-   * @param m1
-   * @param m2
-   * @return
-   */
-  private String getExtractorQueryString(Map<String, Integer> m1, Map<String, Integer> m2){
-    String queryString = "query=extractorRunId:(";
-    for (String key: m1.keySet()){
-      for (int i=m1.get(key); i<(m2.get(key)+1); i++){
-        String possible = key + "##" + Integer.toString(i);
-        queryString = queryString + possible + " OR ";
-      }
-    }
-    return queryString.substring(0, queryString.length()-4)+")";
-  }
-
-  /** Constructs an UpdatedResults object with results of getAllPages for entities and relations, and the marker used to generate these results.
-   *
-   * @param markerRep
-   * @param queryString
-   * @return
-   */
-  public UpdatedResults aggUpdatedResults(String markerRep, String queryString){
-    UpdatedResults updatedResults;
-    List<Map<String, Object>> entities = getAllPages("entities", queryString);
-    List<Map<String, Object>> relations = getAllPages("relations", queryString);
-    updatedResults = new UpdatedResults(markerRep, entities, relations);
-    return updatedResults;
-  }
-
-  /** Constructs the url from a type (entity or relation), query, and cursorMark. Iterates through cursor marks and returns all updated entities and relations.
-   *
-   * @param type
-   * @param queryString
-   * @return
-   */
-  public List<Map<String, Object>> getAllPages(String type, String queryString){
-    ParameterizedTypeReference<ResultsBatch> resultClass = new ParameterizedTypeReference<ResultsBatch>(){};
-    List<Map<String, Object>> result = new ArrayList<>();
-    boolean done = false;
-    String cursorMark="*";
-    while (!done){
-      UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(getUrl(type)).query(queryString);
-      uri.replaceQueryParam("cursorMark", cursorMark);
-      uri.fragment(null);
-      URI fullUrl = uri.build().toUri();
-      ResultsBatch response = navResponse(fullUrl, resultClass);
-      result.addAll(Arrays.asList(response.getResults()));
-      String newCursorMark = response.getCursorMark();
-      if(newCursorMark.equals(cursorMark)){
-        done=true;
-      }
-      cursorMark = newCursorMark;
-    }
-    return result;
-  }
-
-  /**Makes the HTTP call from a given url to retrieve a ResultsBatch object that represents the set of elements that fit
-   * the query parameters (extractorRunIds and cursorMark)
-   *
-   * @param resultClass
-   * @param <T>
-   * @return
-   */
-  //This method has the restTemplate calls --> mock it
-  public <T> T navResponse(URI url, ParameterizedTypeReference<T> resultClass){
-    RestTemplate restTemplate = new RestTemplate();
-    HttpHeaders headers = getAuthHeaders();
-    HttpEntity<String> request =new HttpEntity<String>(headers);
-    ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, request, resultClass);
-    T responseResult = response.getBody();
-    return responseResult;
-  }
-
-  /** Generate marker from each source and its sourceExtractIteration
-   *
-   * @return
-   */
-  public Map<String, Integer> getCurrentMarker(){
-    Collection<Source> sources = getAllSources(); //loadAllSources/cache?
-    HashMap<String, Integer> newMarker = new HashMap<>();
-    for (Source source : sources){
-      if(source.getSourceType().equals(SourceType.IMPALA)){
-        continue;
-      }
-      String id = source.getIdentity();
-      Integer sourceExtractIteration = source.getSourceExtractIteration();
-      newMarker.put(id, sourceExtractIteration);
-    }
-    return newMarker;
   }
 
   /**
@@ -284,44 +150,8 @@ public class NavApiCient {
     sourceCacheByType.invalidateAll();
   }
 
-  private HttpHeaders getAuthHeaders() {
-    // basic authentication with base64 encoding
-    String plainCreds = String.format("%s:%s", config.getUsername(),
-        config.getPassword());
-    byte[] plainCredsBytes = plainCreds.getBytes();
-    byte[] base64CredsBytes = Base64.encodeBase64(plainCredsBytes);
-    String base64Creds = new String(base64CredsBytes);
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Authorization", "Basic " + base64Creds);
-    return headers;
-  }
-
-  /**
-   *
-   * @return url for querying all sources
-   */
-  private String getUrl() {
-    // form the url string to request all entities with type equal to SOURCE
-    String baseNavigatorUrl = config.getNavigatorUrl();
-    String entities = joinUrlPath(baseNavigatorUrl, "entities");
-    return String.format("%s?query=%s%s", entities, SOURCE_QUERY, "&debugQuery=on");
-    //return String.format("%s?query=%s", entities, SOURCE_QUERY);
-  }
-
-  /**
-   * @param type "entities", "relations"
-   * @return url for querying entities and relations
-   */
-  private String getUrl(String type) {
-    String baseNavigatorUrl = config.getNavigatorUrl();
-    String typeUrl = joinUrlPath(baseNavigatorUrl, type);
-    if(type.equals("entities")) {
-      return typeUrl+"/paging";
-    } else { return typeUrl;}
-  }
-
-  private String joinUrlPath(String base, String component) {
-    return base + (base.endsWith("/") ? "" : "/") + component;
+  public PluginConfigurations getConfig(){
+    return this.config;
   }
 
   private void loadAllSources() {
