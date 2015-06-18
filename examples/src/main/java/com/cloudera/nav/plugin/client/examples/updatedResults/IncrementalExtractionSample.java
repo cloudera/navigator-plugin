@@ -49,13 +49,13 @@ public class IncrementalExtractionSample {
    *
    * @return
    */
-  public UpdatedResults getAllUpdated(){
+  public UpdatedResults getAllUpdated(boolean post){
     UpdatedResults updatedResults;
     Map<String, Integer> currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
       String queryString = "query=identity:*";
-      updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
+      updatedResults = aggUpdatedResults(currentMarkerRep, queryString, post);
       return updatedResults;
     } catch (IOException e){
 //      System.err.println(e.getMessage());
@@ -71,20 +71,21 @@ public class IncrementalExtractionSample {
    * @return
    */
 
-  public UpdatedResults getAllUpdated(String markerRep){
+  public UpdatedResults getAllUpdated(String markerRep, boolean post){
     UpdatedResults updatedResults;
     Map<String, Integer> currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
       Map<String, Integer> marker = new ObjectMapper().readValue(markerRep, new TypeReference<Map<String, Integer>>(){});
       String extractorQueryString = getExtractorQueryString(marker, currentMarker);
-      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString);
+      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString, post);
       return updatedResults;
     } catch (IOException e) {
       System.err.println(e.getMessage());
       throw Throwables.propagate(e);
     }
   }
+
 
   /** Constructs a query in Solr syntax as "<extractorRunId1> OR <extractorRunId2> ..." for all extraction iterations per source between m1 and m2
    *
@@ -108,11 +109,13 @@ public class IncrementalExtractionSample {
    * @param markerRep
    * @param queryString
    * @return
+   *
+   * Public for testing only
    */
-  private UpdatedResults aggUpdatedResults(String markerRep, String queryString){
+  public UpdatedResults aggUpdatedResults(String markerRep, String queryString, boolean post){
     UpdatedResults updatedResults;
-    List<Map<String, Object>> entities = getAllPages("entities", queryString);
-    List<Map<String, Object>> relations = getAllPages("relations", queryString);
+    List<Map<String, Object>> entities = getAllPages("entities", queryString, post);
+    List<Map<String, Object>> relations = getAllPages("relations", queryString, post);
     updatedResults = new UpdatedResults(markerRep, entities, relations);
     return updatedResults;
   }
@@ -123,21 +126,27 @@ public class IncrementalExtractionSample {
    * @param queryString
    * @return
    */
-  private List<Map<String, Object>> getAllPages(String type, String queryString){
-    String fullUrl = ClientUtils.getUrl(config, type);
+  private List<Map<String, Object>> getAllPages(String type, String queryString, boolean post){
+    String fullUrlPost = ClientUtils.getUrl(config, type);
     MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
     body.add("query",  queryString);
+
+    UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(ClientUtils.getUrl(config, type)).query(queryString);
+    uri.fragment(null);
 
     List<Map<String, Object>> result = new ArrayList<>();
     boolean done = false;
     String cursorMark="*";
     while (!done){
-//      UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(ClientUtils.getUrl(client.getConfig(), type)).query(queryString);
-//      uri.replaceQueryParam("cursorMark", cursorMark);
-//      uri.fragment(null);
-//      URI fullUrl = uri.build().toUri();
-      body.add("cursorMark", cursorMark);
-      ResultsBatch response = navResponse(fullUrl, body);
+      uri.replaceQueryParam("cursorMark", cursorMark);
+      URI fullUrl = uri.build().toUri();
+      ResultsBatch response;
+      if(post){
+        body.add("cursorMark", cursorMark);
+        response = navResponse(fullUrlPost, body);
+      } else {
+        response = navResponse(fullUrl);
+      }
       result.addAll(Arrays.asList(response.getResults()));
       String newCursorMark = response.getCursorMark();
       if(newCursorMark.equals(cursorMark)){
@@ -150,11 +159,26 @@ public class IncrementalExtractionSample {
 
   /**Makes the HTTP call from a given url to retrieve a ResultsBatch object that represents the set of elements that fit
    * the query parameters (extractorRunIds and cursorMark)
-   * @param formData
    * @param url
    * @return
+   *
+   * Public for testing only
    */
-  //This method has the restTemplate calls --> mock it
+  private ResultsBatch navResponse(URI url){
+    ParameterizedTypeReference<ResultsBatch> resultClass = new ParameterizedTypeReference<ResultsBatch>(){};
+    RestTemplate restTemplate = new RestTemplate();
+    HttpHeaders headers = ClientUtils.getAuthHeaders(config);
+    HttpEntity<String> request =new HttpEntity<>(headers);
+    ResponseEntity<ResultsBatch> response = restTemplate.exchange(url, HttpMethod.GET, request, resultClass);
+    ResultsBatch responseResult = response.getBody();
+    return responseResult;
+  }
+
+  /**
+   * USED FOR POST METHOD
+   *
+   * puvlic for testing only
+   */
   private ResultsBatch navResponse(String url,  MultiValueMap<String,String> formData){
     ParameterizedTypeReference<ResultsBatch> resultClass = new ParameterizedTypeReference<ResultsBatch>(){};
     RestTemplate restTemplate = new RestTemplate();
@@ -168,6 +192,8 @@ public class IncrementalExtractionSample {
   /** Generate marker from each source and its sourceExtractIteration
    *
    * @return
+   *
+   * Public for testing
    */
   private Map<String, Integer> getCurrentMarker(){
     Collection<Source> sources = client.getAllSources(); //loadAllSources/cache?
@@ -181,5 +207,15 @@ public class IncrementalExtractionSample {
       newMarker.put(id, sourceExtractIteration);
     }
     return newMarker;
+  }
+
+  public String getMarker(){
+    Map<String, Integer> currentMarker = getCurrentMarker();
+    try {
+      String rep = new ObjectMapper().writeValueAsString(currentMarker);
+      return rep;
+    } catch (IOException e){
+      throw Throwables.propagate(e);
+    }
   }
 }

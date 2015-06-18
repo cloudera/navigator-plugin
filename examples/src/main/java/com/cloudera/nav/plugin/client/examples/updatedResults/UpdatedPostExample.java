@@ -1,15 +1,17 @@
 package com.cloudera.nav.plugin.client.examples.updatedResults;
 
-import com.cloudera.nav.plugin.client.*;
+import com.cloudera.nav.plugin.client.NavApiCient;
+import com.cloudera.nav.plugin.client.PluginConfigurationFactory;
+import com.cloudera.nav.plugin.client.PluginConfigurations;
+import com.cloudera.nav.plugin.client.UpdatedResults;
 import com.google.common.collect.Iterables;
 
 import java.util.Map;
 
-/**Example for using getAllUpdated() methods to retrieve entities and relations modified since a given set of extractions.
- *
- * Created by Nadia.Wallace on 6/4/15.
+/**
+ * Created by Nadia.Wallace on 6/17/15.
  */
-public class GetAllUpdatedResults {
+public class UpdatedPostExample {
 
   private static String firstMarker;
   private static String  incrementMarker;
@@ -22,18 +24,15 @@ public class GetAllUpdatedResults {
     // setup the plugin and api client
     String configFilePath = args[0];
     PluginConfigurations config = (new PluginConfigurationFactory())
-            .readConfigurations(configFilePath);
+        .readConfigurations(configFilePath);
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
-    String current = ies.getMarker();
-    System.out.println(current);
-
-    UpdatedResults resultsNoMarker = ies.getAllUpdated(false);
+    UpdatedResults resultsNoMarker = ies.getAllUpdated(true);
     String marker1 = resultsNoMarker.getMarker();
     firstMarker = marker1;
-    System.out.println(firstMarker);
+    System.out.println(firstMarker.toString());
 
     Iterable<Map<String, Object>> entities1 = resultsNoMarker.getEntities();
     System.out.println("Number of entities: " + Iterables.size(entities1));
