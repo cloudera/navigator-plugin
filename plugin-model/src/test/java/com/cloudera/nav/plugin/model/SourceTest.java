@@ -18,7 +18,7 @@ package com.cloudera.nav.plugin.model;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class SourceTest {
 

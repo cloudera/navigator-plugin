@@ -22,7 +22,7 @@ import com.cloudera.nav.plugin.model.MD5IdGenerator;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class EntityTest {
 
