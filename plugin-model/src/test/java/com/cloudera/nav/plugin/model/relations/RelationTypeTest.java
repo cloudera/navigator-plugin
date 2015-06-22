@@ -18,7 +18,7 @@ package com.cloudera.nav.plugin.model.relations;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class RelationTypeTest {
 

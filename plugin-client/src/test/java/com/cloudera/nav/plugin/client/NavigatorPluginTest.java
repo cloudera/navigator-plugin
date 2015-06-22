@@ -28,8 +28,9 @@ import com.google.common.collect.Iterables;
 import java.net.URL;
 import java.util.Collection;
 
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.runners.*;
 

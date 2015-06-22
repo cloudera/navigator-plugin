@@ -16,8 +16,8 @@
 package com.cloudera.nav.plugin.client.writer.registry;
 
 
-import com.cloudera.nav.plugin.model.entities.Entity;
 import com.cloudera.nav.plugin.model.annotations.MClass;
+import com.cloudera.nav.plugin.model.entities.Entity;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.cache.LoadingCache;

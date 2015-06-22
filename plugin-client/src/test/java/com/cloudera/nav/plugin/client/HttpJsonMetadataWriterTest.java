@@ -16,7 +16,8 @@
 
 package com.cloudera.nav.plugin.client;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.cloudera.nav.plugin.client.writer.HttpJsonMetadataWriter;
@@ -41,7 +42,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.*;
 
 public class HttpJsonMetadataWriterTest {

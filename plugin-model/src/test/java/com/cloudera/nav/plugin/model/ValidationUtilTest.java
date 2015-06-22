@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 
 import java.util.Collection;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class ValidationUtilTest {
 

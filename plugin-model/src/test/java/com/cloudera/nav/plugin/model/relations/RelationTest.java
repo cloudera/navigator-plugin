@@ -16,7 +16,8 @@
 
 package com.cloudera.nav.plugin.model.relations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.cloudera.nav.plugin.model.entities.Entity;
 import com.cloudera.nav.plugin.model.entities.HdfsEntity;
@@ -25,7 +26,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.junit.*;
+import org.junit.Test;
 
 public class RelationTest {
 

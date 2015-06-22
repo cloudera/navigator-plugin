@@ -16,13 +16,14 @@
 
 package com.cloudera.nav.plugin.model.relations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import com.cloudera.nav.plugin.model.MD5IdGenerator;
 import com.cloudera.nav.plugin.model.SourceType;
 import com.google.common.collect.ImmutableList;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class RelationIdGeneratorTest {
 
