@@ -25,13 +25,13 @@ import com.cloudera.nav.plugin.client.ResultsBatch;
 import com.cloudera.nav.plugin.client.UpdatedResults;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +52,7 @@ public class IncrementalExtractionSample {
 
   private NavApiCient client;
   private PluginConfigurations config;
+  private Map<String, Integer> currentMarker;
 
   public IncrementalExtractionSample(NavApiCient client){
     this.client = client;
@@ -63,13 +64,13 @@ public class IncrementalExtractionSample {
    *
    * @return
    */
-  public UpdatedResults getAllUpdated(boolean post){
+  public UpdatedResults getAllUpdated(){
     UpdatedResults updatedResults;
-    Map<String, Integer> currentMarker = getCurrentMarker();
+    currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
       String queryString = "identity:*";
-      updatedResults = aggUpdatedResults(currentMarkerRep, queryString, post);
+      updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
       return updatedResults;
     } catch (IOException e){
       throw Throwables.propagate(e);
@@ -85,16 +86,18 @@ public class IncrementalExtractionSample {
    * @return
    */
 
-  public UpdatedResults getAllUpdated(String markerRep,
-                                      boolean post){
+  public UpdatedResults getAllUpdated(String markerRep){
     UpdatedResults updatedResults;
-    TypeReference<Map<String, Integer>> typeRef =new TypeReference<Map<String, Integer>>(){};
-    Map<String, Integer> currentMarker = getCurrentMarker();
+    TypeReference<Map<String, Integer>> typeRef =
+        new TypeReference<Map<String, Integer>>(){};
+    currentMarker = getCurrentMarker(); //makes getAllSources() call
     try {
-      String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      Map<String, Integer> marker = new ObjectMapper().readValue(markerRep, typeRef);
+      String currentMarkerRep =
+          new ObjectMapper().writeValueAsString(currentMarker);
+      Map<String, Integer> marker =
+          new ObjectMapper().readValue(markerRep, typeRef);
       String extractorQueryString = getExtractorQueryString(marker, currentMarker);
-      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString, post);
+      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString);
       return updatedResults;
     } catch (IOException e) {
       throw Throwables.propagate(e);
@@ -130,93 +133,51 @@ public class IncrementalExtractionSample {
    *
    * Public for testing only
    */
-  public UpdatedResults aggUpdatedResults(String markerRep,
-                                          String queryString,
-                                          boolean post){
+  public UpdatedResults aggUpdatedResults(String markerRep,String queryString){
     UpdatedResults updatedResults;
-    List<Map<String, Object>> entities = getAllPages("entities", queryString, post);
-    List<Map<String, Object>> relations = getAllPages("relations", queryString, post);
+    Iterable<Map<String, Object>> entities =
+        new IncrementalExtractIterable<>(this, "entities", queryString, 100);
+    Iterable<Map<String, Object>> relations =
+        new IncrementalExtractIterable<>(this, "relations", queryString, 100);
     updatedResults = new UpdatedResults(markerRep, entities, relations);
     return updatedResults;
   }
 
-  /** Constructs the url from a type (entity or relation), query, and cursorMark.
-   * Iterates through cursor marks and returns all updated entities and relations.
+  /** Constructs url from a type (entity or relation), query, and cursorMark.
+   *  Returns a response batch.
+   * Called in next() of IncrementalExtractIterator()
    *
    * @param type
    * @param queryString
    * @return
    */
-  private List<Map<String, Object>> getAllPages(String type,
-                                                String queryString,
-                                                boolean post){
+  public <T> ResultsBatch<T> getResultsBatch(String type,
+                                      String queryString,
+                                      String cursorMark){
+
     String fullUrlPost = ClientUtils.getUrl(config, type);
     Map<String, String> body = Maps.newHashMap();
     body.put("query", queryString);
-
-    String baseUrl = ClientUtils.getUrl(config, type);
-    UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(baseUrl);
-    uri.query(queryString);
-    uri.fragment(null);
-
-    List<Map<String, Object>> result = Lists.newArrayList();
-    boolean done = false;
-    String cursorMark="*";
-    while (!done){
-      uri.replaceQueryParam("cursorMark", cursorMark);
-      URI fullUrl = uri.build().toUri();
-      ResultsBatch response;
-      if(post){
-        body.put("cursorMark", cursorMark);
-        response = navResponse(fullUrlPost, body);
-      } else {
-        response = navResponse(fullUrl);
-      }
-      result.addAll(Arrays.asList(response.getResults()));
-      String newCursorMark = response.getCursorMark();
-      if(newCursorMark.equals(cursorMark)){
-        done=true;
-      }
-      cursorMark = newCursorMark;
-    }
-    return result;
-  }
-
-  /**Makes the HTTP call from a given url to retrieve a ResultsBatch object that
-   *  represents the set of elements that fit the query parameters
-   *  (extractorRunIds and cursorMark)
-   *
-   * @param url
-   * @return
-   *
-   * Public for testing only
-   */
-  private ResultsBatch navResponse(URI url){
-    ParameterizedTypeReference<ResultsBatch> resultClass =
-        new ParameterizedTypeReference<ResultsBatch>(){};
-    RestTemplate restTemplate = new RestTemplate();
-    HttpHeaders headers = ClientUtils.getAuthHeaders(config);
-    HttpEntity<String> request =new HttpEntity<>(headers);
-    ResponseEntity<ResultsBatch> response = restTemplate.exchange(url,
-        HttpMethod.GET, request, resultClass); //move to separate method to mock, custom args
-    ResultsBatch responseResult = response.getBody();
-    return responseResult;
+    body.put("cursorMark", cursorMark);
+    ResultsBatch<T> response = navResponse(fullUrlPost, body);
+    return response;
   }
 
   /**
    * USED FOR POST METHOD
    *
-   * puvlic for testing only
+   * public for testing only
    */
-  private ResultsBatch navResponse(String url,  Map<String,String> formData){
-    ParameterizedTypeReference<ResultsBatch> resultClass =
-        new ParameterizedTypeReference<ResultsBatch>(){};
+  @VisibleForTesting
+  public <T> ResultsBatch<T> navResponse(String url,  Map<String,String> formData){
+    ParameterizedTypeReference<ResultsBatch<T>> resultClass =
+        new ParameterizedTypeReference<ResultsBatch<T>>(){};
     RestTemplate restTemplate = new RestTemplate();
     HttpHeaders headers = ClientUtils.getAuthHeaders(config);
     HttpEntity<Map<String, String>> request =new HttpEntity<>(formData, headers);
-    ResponseEntity<ResultsBatch> response = restTemplate.exchange(url,
+    ResponseEntity<ResultsBatch<T>> response = restTemplate.exchange(url,
         HttpMethod.POST, request, resultClass);
-    ResultsBatch responseResult = response.getBody();
+    ResultsBatch<T> responseResult = response.getBody();
     return responseResult;
   }
 
@@ -227,7 +188,7 @@ public class IncrementalExtractionSample {
    * Public for testing
    */
   private Map<String, Integer> getCurrentMarker(){
-    Collection<Source> sources = client.getAllSources(); //loadAllSources/cache?
+    Collection<Source> sources = client.getAllSources();
     HashMap<String, Integer> newMarker = Maps. newHashMap();
     for (Source source : sources){
       if(source.getSourceType().equals(SourceType.IMPALA)){

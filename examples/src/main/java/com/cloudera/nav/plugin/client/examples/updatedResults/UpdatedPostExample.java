@@ -45,7 +45,7 @@ public class UpdatedPostExample {
     NavApiCient client = new NavApiCient(config);
 
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
-    UpdatedResults resultsNoMarker = ies.getAllUpdated(true);
+    UpdatedResults resultsNoMarker = ies.getAllUpdated();
     String marker1 = resultsNoMarker.getMarker();
     firstMarker = marker1;
     System.out.println(firstMarker.toString());

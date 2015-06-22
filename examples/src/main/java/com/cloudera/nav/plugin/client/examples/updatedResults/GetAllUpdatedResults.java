@@ -51,7 +51,7 @@ public class GetAllUpdatedResults {
     String current = ies.getMarker();
     System.out.println(current);
 
-    UpdatedResults resultsNoMarker = ies.getAllUpdated(true);
+    UpdatedResults resultsNoMarker = ies.getAllUpdated();
     String marker1 = resultsNoMarker.getMarker();
     firstMarker = marker1; //write to a file
     System.out.println(firstMarker); //use JUnit assertions - expect Map

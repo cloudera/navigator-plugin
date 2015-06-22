@@ -16,18 +16,19 @@
 
 package com.cloudera.nav.plugin.client;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by Nadia.Wallace on 6/11/15.
  */
-public class ResultsBatch  {
+public class ResultsBatch<T>  {
   private String cursorMark;
-  private Map<String, Object>[] results;
+  private List<T> results;
 
-  public Map<String, Object>[] getResults() { return results;  }
+  public List<T> getResults() { return results; }
 
-  public void setResults(Map<String, Object>[] results)  { this.results = results; }
+  public void setResults(List<T> results)  { this.results = results; }
 
   public String getCursorMark(){ return cursorMark;  }
 
