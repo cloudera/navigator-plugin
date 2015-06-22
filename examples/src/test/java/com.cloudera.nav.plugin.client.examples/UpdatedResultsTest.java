@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.cloudera.nav.plugin.client.NavApiCient;
+import com.cloudera.nav.plugin.client.examples.updatedResults.IncrementalExtractIterable;
 import com.cloudera.nav.plugin.client.examples.updatedResults.ResultsBatch;
 import com.cloudera.nav.plugin.client.examples.updatedResults.UpdatedResults;
 import com.cloudera.nav.plugin.client.examples.updatedResults.IncrementalExtractionSample;
@@ -47,16 +48,16 @@ import org.mockito.runners.*;
 @SuppressWarnings("unchecked")
 public class UpdatedResultsTest {
 
-  private NavApiCient mockClient;
-  private IncrementalExtractionSample ies;
+  @Mock private NavApiCient mockClient;
+  @Mock private IncrementalExtractionSample ies;
 
   private String marker1Rep;
   private String marker2Rep;
   private Map<String, Integer> marker2;
   private String allQuery;
   private String markerQuery;
-  private List<Map<String, Object>> entities;
-  private List<Map<String, Object>> relations;
+  private IncrementalExtractIterable<Map<String, Object>> entities;
+  private IncrementalExtractIterable<Map<String, Object>> relations;
   private UpdatedResults result;
   private URI uri;
   private ResultsBatch resultBatch;
@@ -64,27 +65,24 @@ public class UpdatedResultsTest {
 
   @Before
   public void setUp() {
-//    allQuery = "query=identity:*";
-//    marker1Rep = "{\"identityString\":100}";
-//    marker2 = Maps.newHashMap();
-//    marker2.put("abc", 3);
-//    marker2.put("def", 4);
-//
-//    result = new UpdatedResults(marker1Rep, entities, relations);
-//    resultBatch = new ResultsBatch();
-//    resultBatch.setCursorMark("*");
-//    Map<String, Object> map1 = Maps.newHashMap();
-//    List<Map<String, Object>> mapArr = Lists.newArrayList(map1);
-//    resultBatch.setResults(mapArr);
-//
-//    mockClient = mock(NavApiCient.class);
-//    ies = mock(IncrementalExtractionSample.class);
-//    Source source1 = new Source("source1", SourceType.HDFS, "cluster1",
-//        "foo/bar", "identityString", 100);
-//
-//    when(mockClient.getAllSources()).thenReturn(Lists.newArrayList(source1));
-//    when(ies.navResponse(anyString(), Matchers.<Map<String, String>>any())).thenReturn(resultBatch);
- //   when(ies.navResponse((URI) argThat(new UriArgumentsMatcher()))).thenReturn(resultBatch);
+    allQuery = "query=identity:*";
+    marker1Rep = "{\"identityString\":100}";
+    marker2 = Maps.newHashMap();
+    marker2.put("abc", 3);
+    marker2.put("def", 4);
+
+    result = new UpdatedResults(marker1Rep, entities, relations);
+    resultBatch = new ResultsBatch();
+    resultBatch.setCursorMark("*");
+    Map<String, Object> map1 = Maps.newHashMap();
+    List<Map<String, Object>> mapArr = Lists.newArrayList(map1);
+    resultBatch.setResults(mapArr);
+
+    Source source1 = new Source("source1", SourceType.HDFS, "cluster1",
+        "foo/bar", "identityString", 100);
+
+    when(ies.getClient().getAllSources()).thenReturn(Lists.newArrayList(source1));
+    when(ies.navResponse(anyString(), Matchers.<Map<String, String>>any())).thenReturn(resultBatch);
   }
 
   private class UriArgumentsMatcher extends ArgumentMatcher {
@@ -102,19 +100,20 @@ public class UpdatedResultsTest {
 
   @Test
   public void testAllUpdates() {
-//    UpdatedResults res = ies.getAllUpdated(true);
-//    assertTrue(res!=null);
+    UpdatedResults res = ies.getAllUpdated();
+    assertTrue(res!=null);
   }
 
   @Test
   public void testIncrementalUpdates() {
-//    UpdatedResults res = ies.getAllUpdated(marker1Rep, true);
-//    assertTrue(res!=null);
+    UpdatedResults res = ies.getAllUpdated(marker1Rep);
+    assertTrue(res!=null);
   }
 
   @Test
   public void testCurrentMarker() {
-    //how to verify correctness?
+    String res = ies.getMarker();
+    assertEquals(res, marker1Rep);
   }
 
 }

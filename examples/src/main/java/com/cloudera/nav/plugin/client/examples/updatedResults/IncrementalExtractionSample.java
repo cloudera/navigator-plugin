@@ -205,4 +205,6 @@ public class IncrementalExtractionSample {
       throw Throwables.propagate(e);
     }
   }
+
+  public NavApiCient getClient(){ return client; }
 }
