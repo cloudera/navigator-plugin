@@ -21,8 +21,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.cloudera.nav.plugin.client.NavApiCient;
-import com.cloudera.nav.plugin.client.ResultsBatch;
-import com.cloudera.nav.plugin.client.UpdatedResults;
+import com.cloudera.nav.plugin.client.examples.updatedResults.ResultsBatch;
+import com.cloudera.nav.plugin.client.examples.updatedResults.UpdatedResults;
 import com.cloudera.nav.plugin.client.examples.updatedResults.IncrementalExtractionSample;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
@@ -30,21 +30,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.runners.*;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Created by Nadia.Wallace on 6/10/15.
@@ -71,26 +64,26 @@ public class UpdatedResultsTest {
 
   @Before
   public void setUp() {
-    allQuery = "query=identity:*";
-    marker1Rep = "{\"identityString\":100}";
-    marker2 = Maps.newHashMap();
-    marker2.put("abc", 3);
-    marker2.put("def", 4);
-
-    result = new UpdatedResults(marker1Rep, entities, relations);
-    resultBatch = new ResultsBatch();
-    resultBatch.setCursorMark("*");
-    Map<String, Object> map1 = Maps.newHashMap();
-    List<Map<String, Object>> mapArr = Lists.newArrayList(map1);
-    resultBatch.setResults(mapArr);
-
-    mockClient = mock(NavApiCient.class);
-    ies = mock(IncrementalExtractionSample.class);
-    Source source1 = new Source("source1", SourceType.HDFS, "cluster1",
-        "foo/bar", "identityString", 100);
-
-    when(mockClient.getAllSources()).thenReturn(Lists.newArrayList(source1));
-    when(ies.navResponse(anyString(), Matchers.<Map<String, String>>any())).thenReturn(resultBatch);
+//    allQuery = "query=identity:*";
+//    marker1Rep = "{\"identityString\":100}";
+//    marker2 = Maps.newHashMap();
+//    marker2.put("abc", 3);
+//    marker2.put("def", 4);
+//
+//    result = new UpdatedResults(marker1Rep, entities, relations);
+//    resultBatch = new ResultsBatch();
+//    resultBatch.setCursorMark("*");
+//    Map<String, Object> map1 = Maps.newHashMap();
+//    List<Map<String, Object>> mapArr = Lists.newArrayList(map1);
+//    resultBatch.setResults(mapArr);
+//
+//    mockClient = mock(NavApiCient.class);
+//    ies = mock(IncrementalExtractionSample.class);
+//    Source source1 = new Source("source1", SourceType.HDFS, "cluster1",
+//        "foo/bar", "identityString", 100);
+//
+//    when(mockClient.getAllSources()).thenReturn(Lists.newArrayList(source1));
+//    when(ies.navResponse(anyString(), Matchers.<Map<String, String>>any())).thenReturn(resultBatch);
  //   when(ies.navResponse((URI) argThat(new UriArgumentsMatcher()))).thenReturn(resultBatch);
   }
 

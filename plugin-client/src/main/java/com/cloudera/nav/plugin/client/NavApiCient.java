@@ -47,7 +47,6 @@ public class NavApiCient {
 
   private static final Logger LOG = LoggerFactory.getLogger(NavApiCient.class);
   private static final String SOURCE_QUERY = "type:SOURCE";
-  private static final String ALL_QUERY = "type:*";
 
   private final PluginConfigurations config;
   private final Cache<String, Source> sourceCacheByUrl;

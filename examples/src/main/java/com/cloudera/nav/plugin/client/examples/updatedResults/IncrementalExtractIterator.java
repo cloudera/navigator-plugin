@@ -17,12 +17,8 @@
 package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 
-import com.cloudera.nav.plugin.client.ResultsBatch;
-import com.google.common.collect.Lists;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Map;
 import java.util.List;
 
 /**
@@ -69,8 +65,8 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
         cursorMark = nextCursorMark;
         nextCursorMark = null;
         getNextDocs(type); //adds more results, resets resultIndex, updates hasNext + nextCursorMark
-        numBatchesFetched++;
       }
+      numBatchesFetched++;
     }
     return nextResult; //Ask Chung about iterating one by one
   }
@@ -88,5 +84,5 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     throw new UnsupportedOperationException();
   }
 
-  public Integer getNumBatchesFetched(){ return this.getNumBatchesFetched(); }
+  public Integer getNumBatchesFetched(){ return numBatchesFetched; }
 }

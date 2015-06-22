@@ -19,7 +19,6 @@ package com.cloudera.nav.plugin.client.examples.updatedResults;
 import com.cloudera.nav.plugin.client.NavApiCient;
 import com.cloudera.nav.plugin.client.PluginConfigurationFactory;
 import com.cloudera.nav.plugin.client.PluginConfigurations;
-import com.cloudera.nav.plugin.client.UpdatedResults;
 import com.google.common.collect.Iterables;
 
 import java.util.Map;

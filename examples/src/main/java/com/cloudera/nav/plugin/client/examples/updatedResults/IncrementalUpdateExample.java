@@ -19,8 +19,6 @@ package com.cloudera.nav.plugin.client.examples.updatedResults;
 import com.cloudera.nav.plugin.client.NavApiCient;
 import com.cloudera.nav.plugin.client.PluginConfigurationFactory;
 import com.cloudera.nav.plugin.client.PluginConfigurations;
-import com.cloudera.nav.plugin.client.UpdatedResults;
-import com.google.common.collect.Iterables;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -40,11 +38,11 @@ public class IncrementalUpdateExample {
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
-    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":5," +
-                      "\"4fbdadc6899638782fc8cb626176dc7b\":5," +
-                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":5," +
-                      "\"a063e69e6c0660353dc378c836837935\":5," +
-                      "\"a09b0233cc58ff7d601eaa68673a20c6\":5}";
+    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":10," +
+                      "\"4fbdadc6899638782fc8cb626176dc7b\":10," +
+                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":10," +
+                      "\"a063e69e6c0660353dc378c836837935\":10," +
+                      "\"a09b0233cc58ff7d601eaa68673a20c6\":10}";
 
     UpdatedResults incrementResults;
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
@@ -52,15 +50,15 @@ public class IncrementalUpdateExample {
     UpdatedResults rs = ies.getAllUpdated(marker);
     String nextMarker = rs.getMarker();
 
-    Iterable<Map<String, Object>> en = rs.getEntities();
-    Iterator<Map<String, Object>> entitiesIterator = en.iterator();
+    IncrementalExtractIterable<Map<String, Object>> en = rs.getEntities();
+    IncrementalExtractIterator<Map<String, Object>> entitiesIterator = en.iterator();
     Integer totalEntities = 0;
     while(entitiesIterator.hasNext()){
       Map<String,Object> nextResult = entitiesIterator.next();
       totalEntities++;
     }
-    Iterable<Map<String, Object>> rel = rs.getRelations();
-    Iterator<Map<String, Object>> relationsIterator = rel.iterator();
+    IncrementalExtractIterable<Map<String, Object>> rel = rs.getRelations();
+    IncrementalExtractIterator<Map<String, Object>> relationsIterator = rel.iterator();
     Integer totalRelations = 0;
     while(relationsIterator.hasNext()){
       Map<String,Object> nextResult = relationsIterator.next();
@@ -68,7 +66,9 @@ public class IncrementalUpdateExample {
     }
 
     System.out.println("Total number of entities: " + totalEntities);
+    System.out.println("Num entities batches: " + entitiesIterator.getNumBatchesFetched());
     System.out.println("Total number of relations: " + totalRelations);
+    System.out.println("Num relations batches: " + relationsIterator.getNumBatchesFetched());
     System.out.println("Next Marker: " + nextMarker);
   }
 }

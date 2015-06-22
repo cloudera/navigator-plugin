@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.nav.plugin.client;
+package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 import java.util.Map;
 
@@ -25,11 +25,11 @@ import java.util.Map;
  */
 public class UpdatedResults {
   private String marker;
-  private Iterable<Map<String, Object>> entities; //use <?>
-  private Iterable<Map<String, Object>> relations;
+  private IncrementalExtractIterable<Map<String, Object>> entities; //use <?>
+  private IncrementalExtractIterable<Map<String, Object>> relations;
 
-  public UpdatedResults(String marker, Iterable<Map<String, Object>> entities,
-                        Iterable<Map<String, Object>> relations){
+  public UpdatedResults(String marker, IncrementalExtractIterable<Map<String, Object>> entities,
+                        IncrementalExtractIterable<Map<String, Object>> relations){
       this.marker = marker;
       this.entities = entities;
       this.relations = relations;
@@ -39,11 +39,11 @@ public class UpdatedResults {
       return marker;
   }
 
-  public Iterable<Map<String, Object>> getEntities() {
+  public IncrementalExtractIterable<Map<String, Object>> getEntities() {
       return entities;
   }
 
-  public Iterable<Map<String, Object>> getRelations() {
+  public IncrementalExtractIterable<Map<String, Object>> getRelations() {
       return relations;
   }
 
@@ -51,9 +51,9 @@ public class UpdatedResults {
       this.marker = marker;
   }
 
-  public void setEntities(Iterable<Map<String, Object>> entities) { this.entities = entities; }
+  public void setEntities(IncrementalExtractIterable<Map<String, Object>> entities) { this.entities = entities; }
 
-  public void setRelations(Iterable<Map<String, Object>> relations) { this.relations = relations; }
+  public void setRelations(IncrementalExtractIterable<Map<String, Object>> relations) { this.relations = relations; }
 
 //  @Override
 //  public boolean equals(Object obj) {

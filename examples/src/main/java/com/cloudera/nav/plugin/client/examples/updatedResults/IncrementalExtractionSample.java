@@ -21,20 +21,15 @@ import com.cloudera.com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudera.nav.plugin.client.ClientUtils;
 import com.cloudera.nav.plugin.client.NavApiCient;
 import com.cloudera.nav.plugin.client.PluginConfigurations;
-import com.cloudera.nav.plugin.client.ResultsBatch;
-import com.cloudera.nav.plugin.client.UpdatedResults;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -43,7 +38,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Created by Nadia.Wallace on 6/16/15.
@@ -69,7 +63,7 @@ public class IncrementalExtractionSample {
     currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      String queryString = "identity:*";
+      String queryString = "extractorRunId:*";
       updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
       return updatedResults;
     } catch (IOException e){
@@ -104,6 +98,26 @@ public class IncrementalExtractionSample {
     }
   }
 
+  /** Generate marker from each source and its sourceExtractIteration
+   *
+   * @return
+   *
+   * Public for testing
+   */
+  private Map<String, Integer> getCurrentMarker(){
+    Collection<Source> sources = client.getAllSources();
+    HashMap<String, Integer> newMarker = Maps. newHashMap();
+    for (Source source : sources){
+      if(source.getSourceType().equals(SourceType.IMPALA)){
+        continue;
+      }
+      String id = source.getIdentity();
+      Integer sourceExtractIteration = source.getSourceExtractIteration();
+      newMarker.put(id, sourceExtractIteration);
+    }
+    return newMarker;
+  }
+
 
   /** Constructs a query in Solr syntax as "<extractorRunId1> OR <extractorRunId2> ..."
    * for all extraction iterations per source between m1 and m2
@@ -135,9 +149,9 @@ public class IncrementalExtractionSample {
    */
   public UpdatedResults aggUpdatedResults(String markerRep,String queryString){
     UpdatedResults updatedResults;
-    Iterable<Map<String, Object>> entities =
+    IncrementalExtractIterable<Map<String, Object>> entities =
         new IncrementalExtractIterable<>(this, "entities", queryString, 100);
-    Iterable<Map<String, Object>> relations =
+    IncrementalExtractIterable<Map<String, Object>> relations =
         new IncrementalExtractIterable<>(this, "relations", queryString, 100);
     updatedResults = new UpdatedResults(markerRep, entities, relations);
     return updatedResults;
@@ -181,25 +195,6 @@ public class IncrementalExtractionSample {
     return responseResult;
   }
 
-  /** Generate marker from each source and its sourceExtractIteration
-   *
-   * @return
-   *
-   * Public for testing
-   */
-  private Map<String, Integer> getCurrentMarker(){
-    Collection<Source> sources = client.getAllSources();
-    HashMap<String, Integer> newMarker = Maps. newHashMap();
-    for (Source source : sources){
-      if(source.getSourceType().equals(SourceType.IMPALA)){
-        continue;
-      }
-      String id = source.getIdentity();
-      Integer sourceExtractIteration = source.getSourceExtractIteration();
-      newMarker.put(id, sourceExtractIteration);
-    }
-    return newMarker;
-  }
 
   public String getMarker(){
     Map<String, Integer> currentMarker = getCurrentMarker();
