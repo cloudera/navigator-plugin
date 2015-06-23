@@ -25,11 +25,13 @@ import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -47,10 +49,13 @@ public class IncrementalExtractionSample {
   private NavApiCient client;
   private PluginConfigurations config;
   private Map<String, Integer> currentMarker;
+  private final String DEFAULT_QUERY;
+  private List<String> emptyRunIds = Lists.newArrayList();
 
   public IncrementalExtractionSample(NavApiCient client){
     this.client = client;
     this.config = client.getConfig();
+    this.DEFAULT_QUERY = "identity:*";
   }
 
   /** Returns all of the entities and relations in the database,
@@ -63,8 +68,8 @@ public class IncrementalExtractionSample {
     currentMarker = getCurrentMarker();
     try {
       String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
-      String queryString = "extractorRunId:*";
-      updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
+      updatedResults = aggUpdatedResults(currentMarkerRep, emptyRunIds,
+                                         DEFAULT_QUERY, DEFAULT_QUERY);
       return updatedResults;
     } catch (IOException e){
       throw Throwables.propagate(e);
@@ -90,8 +95,37 @@ public class IncrementalExtractionSample {
           new ObjectMapper().writeValueAsString(currentMarker);
       Map<String, Integer> marker =
           new ObjectMapper().readValue(markerRep, typeRef);
-      String extractorQueryString = getExtractorQueryString(marker, currentMarker);
-      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString);
+      Iterable<String> extractorQueryList = getExtractorQueryList(marker, currentMarker);
+      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryList,
+          DEFAULT_QUERY, DEFAULT_QUERY); //better design?
+      return updatedResults;
+    } catch (IOException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
+  /**To query without a marker, pass null as markerRep --> REDESIGN
+   *
+   * @param markerRep
+   * @param entitiesQuery
+   * @param relationsQuery
+   * @return
+   */
+  public UpdatedResults getAllUpdated(String markerRep,
+                                      String entitiesQuery,
+                                      String relationsQuery){
+    UpdatedResults updatedResults;
+    TypeReference<Map<String, Integer>> typeRef =
+        new TypeReference<Map<String, Integer>>(){};
+    currentMarker = getCurrentMarker(); //makes getAllSources() call
+    try {
+      String currentMarkerRep =
+          new ObjectMapper().writeValueAsString(currentMarker);
+      Map<String, Integer> marker =
+          new ObjectMapper().readValue(markerRep, typeRef);
+      Iterable<String> extractorQuery = getExtractorQueryList(marker, currentMarker);
+      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQuery,
+                                          entitiesQuery, relationsQuery);
       return updatedResults;
     } catch (IOException e) {
       throw Throwables.propagate(e);
@@ -108,9 +142,10 @@ public class IncrementalExtractionSample {
     Collection<Source> sources = client.getAllSources();
     HashMap<String, Integer> newMarker = Maps. newHashMap();
     for (Source source : sources){
-      if(source.getSourceType().equals(SourceType.IMPALA)){
-        continue;
-      }
+      //Source types without source IDs or extractorRunIds are unsupported
+      List<SourceType> unsupportedTypes = Lists.newArrayList(SourceType.PIG,
+          SourceType.IMPALA, SourceType.SPARK, SourceType.SQOOP);
+      if(unsupportedTypes.contains(source.getSourceType())){ continue; }
       String id = source.getIdentity();
       Integer sourceExtractIteration = source.getSourceExtractIteration();
       newMarker.put(id, sourceExtractIteration);
@@ -126,33 +161,39 @@ public class IncrementalExtractionSample {
    * @param m2
    * @return
    */
-  private String getExtractorQueryString(Map<String, Integer> m1,
+  private Iterable<String> getExtractorQueryList(Map<String, Integer> m1,
                                          Map<String, Integer> m2){
-    String queryString = "extractorRunId:(";
+    List<String> runIdList= Lists.newArrayList();
     for (String key: m1.keySet()){
       for (int i=m1.get(key); i<(m2.get(key)+1); i++){
         String possible = key + "##" + Integer.toString(i);
-        queryString = queryString + possible + " OR ";
+        runIdList.add(possible);
       }
     }
-    return queryString.substring(0, queryString.length()-4)+")";
+    return runIdList;
   }
 
   /** Constructs an UpdatedResults object with results of getAllPages
    * for entities and relations, and the marker used to generate these results.
    *
    * @param markerRep
-   * @param queryString
+   * @param entitiesQuery
+   * @param relationsQuery
    * @return
    *
    * Public for testing only
    */
-  public UpdatedResults aggUpdatedResults(String markerRep,String queryString){
+  public UpdatedResults aggUpdatedResults(String markerRep,
+                                          Iterable<String> extractorRunIds,
+                                          String entitiesQuery,
+                                          String relationsQuery){
     UpdatedResults updatedResults;
     IncrementalExtractIterable<Map<String, Object>> entities =
-        new IncrementalExtractIterable<>(this, "entities", queryString, 100);
+        new IncrementalExtractIterable<>(this, "entities", entitiesQuery,
+                                          100, extractorRunIds);
     IncrementalExtractIterable<Map<String, Object>> relations =
-        new IncrementalExtractIterable<>(this, "relations", queryString, 100);
+        new IncrementalExtractIterable<>(this, "relations", relationsQuery,
+                                          100, extractorRunIds);
     updatedResults = new UpdatedResults(markerRep, entities, relations);
     return updatedResults;
   }

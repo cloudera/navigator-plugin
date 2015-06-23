@@ -28,16 +28,20 @@ public class IncrementalExtractIterable<T> implements Iterable<T> {
   private final String type;
   private final String query;
   private final Integer limit;
+  private final Iterable<String> extractorRunIds;
 
-  public IncrementalExtractIterable(IncrementalExtractionSample ies, String type, String query, Integer limit){
+  public IncrementalExtractIterable(IncrementalExtractionSample ies, String type,
+                                    String query, Integer limit,
+                                    Iterable<String> extractorRunIds){
     this.query = query;
     this.type = type;
     this.ies = ies;
     this.limit =limit;
+    this.extractorRunIds=extractorRunIds;
   }
 
   @Override
   public IncrementalExtractIterator<T> iterator() {
-    return new IncrementalExtractIterator<>(ies, type, query, limit);
+    return new IncrementalExtractIterator<>(ies, type, query, limit, extractorRunIds);
   }
 }

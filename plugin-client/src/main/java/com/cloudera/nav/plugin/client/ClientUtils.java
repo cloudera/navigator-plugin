@@ -16,7 +16,10 @@
 
 package com.cloudera.nav.plugin.client;
 
+import java.util.Collection;
+
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpHeaders;
 /**
  * Created by Nadia.Wallace on 6/16/15.
@@ -61,5 +64,43 @@ public class ClientUtils {
 
   private static String joinUrlPath(String base, String component) {
     return base + (base.endsWith("/") ? "" : "/") + component;
+  }
+
+  public static String conjoinSolrQueries(String q1, String q2){
+    if(q1.isEmpty()){ return q2; }
+    if(q2.isEmpty()){ return q1; }
+    return q1 + " AND (" + q2 + ")";
+  }
+
+  public static String buildConjunctiveClause(Iterable<String> values){
+    String orQuery = "";
+    while(values.iterator().hasNext()){
+      String value = values.iterator().next();
+      orQuery = orQuery + value + " OR ";
+    }
+    return orQuery.substring(0, orQuery.length()-4);
+  }
+
+  /** Convert desired values to valid query string in solr syntax
+   *
+   * @param sourceTypes
+   * @param types
+   * @return
+   */
+  public static String queryBuilder(Collection<String> sourceTypes,
+                             Collection<String> types){
+    String query="sourceType:(";
+    for(String sourceType: sourceTypes){
+      query+=sourceType+" OR ";
+    }
+    query = query.substring(0, query.length()-4)+")";
+    if (CollectionUtils.isNotEmpty(types)){
+      query+="AND type:(";
+      for(String type: types){
+        query+=type+" OR ";
+      }
+      query = query.substring(0, query.length()-4)+")";
+    }
+    return query;
   }
 }

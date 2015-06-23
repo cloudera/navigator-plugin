@@ -47,7 +47,7 @@ public class IncrementalUpdateExample {
     UpdatedResults incrementResults;
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
 
-    UpdatedResults rs = ies.getAllUpdated(marker);
+    UpdatedResults rs = ies.getAllUpdated();
     String nextMarker = rs.getMarker();
 
     IncrementalExtractIterable<Map<String, Object>> en = rs.getEntities();

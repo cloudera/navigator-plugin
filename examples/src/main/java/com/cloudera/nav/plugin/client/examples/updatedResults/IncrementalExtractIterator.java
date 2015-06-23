@@ -17,9 +17,14 @@
 package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 
+import com.cloudera.nav.plugin.client.ClientUtils;
+import com.google.common.collect.Iterables;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * Created by Nadia.Wallace on 6/19/15.
@@ -28,21 +33,33 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
 
   private final IncrementalExtractionSample ies;
   private final String type;
-  private final String query;
+  private final String userQuery;
+  private String fullQuery;
   private final Integer limit;
+  private final Integer MAX_QUERY_PARTITION_SIZE = 800;
+  private Iterable<List<String>> partitionedRunIds;
   private boolean hasNext;
   private String cursorMark="*";
   private String nextCursorMark;
   private List<T> results;
   private Integer resultIndex = 0;
+  private Integer partitionIndex = 0;
   private Integer numBatchesFetched = 0;
 
+
   public IncrementalExtractIterator(IncrementalExtractionSample ies,
-                                    String type, String query, Integer limit){
+                                    String type, String query, Integer limit,
+                                    Iterable<String> extractorRunIds){
     this.ies = ies;
     this.type = type;
-    this.query = query;
+    this.userQuery = query;
     this.limit = limit;
+    this.partitionedRunIds = Iterables.partition(extractorRunIds, MAX_QUERY_PARTITION_SIZE);
+    if(!Iterables.isEmpty(extractorRunIds)) {
+      updateFullQuery(userQuery, partitionedRunIds.iterator().next());
+    } else {
+      fullQuery = userQuery;
+    }
     getNextDocs(type);
   }
 
@@ -58,21 +75,33 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     }
     T nextResult = results.get(resultIndex);
     resultIndex++;
-    if(resultIndex == results.size()){ //if at last element in docs
-      if(results.size() < limit){ //if on last batch
-        hasNext = false; //leave loop
-      } else { //else fetch next batch
-        cursorMark = nextCursorMark;
-        nextCursorMark = null;
-        getNextDocs(type); //adds more results, resets resultIndex, updates hasNext + nextCursorMark
-      }
+    Iterator<List<String>> partitionIterator = partitionedRunIds.iterator();
+    //if at last element in docs
+    if(resultIndex == results.size()){
+        //if on last batch
+        if (results.size() < limit) {
+          //if on last query
+          if(!partitionIterator.hasNext()) {
+            hasNext = false; //leave loop
+          //else get next query
+          } else {
+            updateFullQuery(userQuery, partitionIterator.next());
+            getNextDocs(type); //placement?
+          }
+        //else fetch next batch
+        } else {
+          cursorMark = nextCursorMark;
+          nextCursorMark = null;
+          getNextDocs(type);
+        }
+       //adds more results, resets resultIndex, updates hasNext + nextCursorMark
       numBatchesFetched++;
     }
-    return nextResult; //Ask Chung about iterating one by one
+    return nextResult;
   }
 
   public void getNextDocs(String type){
-    ResultsBatch<T> response = ies.getResultsBatch(type, query, cursorMark);
+    ResultsBatch<T> response = ies.getResultsBatch(type, fullQuery, cursorMark);
     results = response.getResults();
     nextCursorMark = response.getCursorMark();
     hasNext = results.size() > 0;
@@ -85,4 +114,9 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
   }
 
   public Integer getNumBatchesFetched(){ return numBatchesFetched; }
+
+  private void updateFullQuery(String userQuery, List<String> extractorRunIds){
+    String extractorString = ClientUtils.buildConjunctiveClause(extractorRunIds);
+    fullQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
+  }
 }
