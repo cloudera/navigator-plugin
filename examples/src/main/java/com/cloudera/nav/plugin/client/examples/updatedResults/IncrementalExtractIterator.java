@@ -38,6 +38,7 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
   private final Integer limit;
   private final Integer MAX_QUERY_PARTITION_SIZE = 800;
   private Iterable<List<String>> partitionedRunIds;
+  private Iterator<List<String>> partitionIterator;
   private boolean hasNext;
   private String cursorMark="*";
   private String nextCursorMark;
@@ -55,8 +56,9 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     this.userQuery = query;
     this.limit = limit;
     this.partitionedRunIds = Iterables.partition(extractorRunIds, MAX_QUERY_PARTITION_SIZE);
+    this.partitionIterator = partitionedRunIds.iterator();
     if(!Iterables.isEmpty(extractorRunIds)) {
-      updateFullQuery(userQuery, partitionedRunIds.iterator().next());
+      updateFullQuery(userQuery, partitionIterator.next());
     } else {
       fullQuery = userQuery;
     }
@@ -75,7 +77,6 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     }
     T nextResult = results.get(resultIndex);
     resultIndex++;
-    Iterator<List<String>> partitionIterator = partitionedRunIds.iterator();
     //if at last element in docs
     if(resultIndex == results.size()){
         //if on last batch
@@ -86,6 +87,7 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
           //else get next query
           } else {
             updateFullQuery(userQuery, partitionIterator.next());
+            cursorMark="*";
             getNextDocs(type); //placement?
           }
         //else fetch next batch
@@ -116,7 +118,7 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
   public Integer getNumBatchesFetched(){ return numBatchesFetched; }
 
   private void updateFullQuery(String userQuery, List<String> extractorRunIds){
-    String extractorString = ClientUtils.buildConjunctiveClause(extractorRunIds);
+    String extractorString = ClientUtils.buildConjunctiveClause("extractorRunId", extractorRunIds);
     fullQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
   }
 }

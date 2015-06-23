@@ -38,16 +38,16 @@ public class IncrementalUpdateExample {
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
-    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":10," +
-                      "\"4fbdadc6899638782fc8cb626176dc7b\":10," +
-                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":10," +
-                      "\"a063e69e6c0660353dc378c836837935\":10," +
-                      "\"a09b0233cc58ff7d601eaa68673a20c6\":10}";
+    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":560," +
+                      "\"4fbdadc6899638782fc8cb626176dc7b\":560," +
+                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":560," +
+                      "\"a063e69e6c0660353dc378c836837935\":560," +
+                      "\"a09b0233cc58ff7d601eaa68673a20c6\":560}";
 
     UpdatedResults incrementResults;
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
 
-    UpdatedResults rs = ies.getAllUpdated();
+    UpdatedResults rs = ies.getAllUpdated(marker);
     String nextMarker = rs.getMarker();
 
     IncrementalExtractIterable<Map<String, Object>> en = rs.getEntities();

@@ -17,6 +17,7 @@
 package com.cloudera.nav.plugin.client;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -69,16 +70,17 @@ public class ClientUtils {
   public static String conjoinSolrQueries(String q1, String q2){
     if(q1.isEmpty()){ return q2; }
     if(q2.isEmpty()){ return q1; }
-    return q1 + " AND (" + q2 + ")";
+    return q1 + " AND " + q2 ;
   }
 
-  public static String buildConjunctiveClause(Iterable<String> values){
-    String orQuery = "";
-    while(values.iterator().hasNext()){
-      String value = values.iterator().next();
+  public static String buildConjunctiveClause(String fieldName, Iterable<String> values){
+    String orQuery = fieldName+":(";
+    Iterator<String> valuesIterator = values.iterator();
+    while(valuesIterator.hasNext()){
+      String value = valuesIterator.next();
       orQuery = orQuery + value + " OR ";
     }
-    return orQuery.substring(0, orQuery.length()-4);
+    return orQuery.substring(0, orQuery.length()-4)+")";
   }
 
   /** Convert desired values to valid query string in solr syntax
@@ -89,18 +91,9 @@ public class ClientUtils {
    */
   public static String queryBuilder(Collection<String> sourceTypes,
                              Collection<String> types){
-    String query="sourceType:(";
-    for(String sourceType: sourceTypes){
-      query+=sourceType+" OR ";
-    }
-    query = query.substring(0, query.length()-4)+")";
-    if (CollectionUtils.isNotEmpty(types)){
-      query+="AND type:(";
-      for(String type: types){
-        query+=type+" OR ";
-      }
-      query = query.substring(0, query.length()-4)+")";
-    }
+    String sourceClause = buildConjunctiveClause("sourceType", sourceTypes);
+    String typeClause = buildConjunctiveClause("type", types);
+    String query = conjoinSolrQueries(sourceClause, typeClause);
     return query;
   }
 }
