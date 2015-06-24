@@ -26,26 +26,27 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 
-/**
- * Created by Nadia.Wallace on 6/19/15.
+/**Custom iterator class used to retrieve entities and relations results from
+ * incremental extraction in getAllUpdated(). Handles iterating through batches
+ * of results with a cursor per query, and iterates through a set of queries.
+ *
  */
 public class IncrementalExtractIterator<T> implements Iterator<T> {
 
   private final IncrementalExtractionSample ies;
-  private final String type;
-  private final String userQuery;
-  private String fullQuery;
   private final Integer limit;
   private final Integer MAX_QUERY_PARTITION_SIZE = 800;
+  private final String type;
+  private final String userQuery;
+  private boolean hasNext;
+  private Integer resultIndex = 0;
+  private Integer numBatchesFetched = 0;
   private Iterable<List<String>> partitionedRunIds;
   private Iterator<List<String>> partitionIterator;
-  private boolean hasNext;
-  private String cursorMark="*";
-  private String nextCursorMark;
   private List<T> results;
-  private Integer resultIndex = 0;
-  private Integer partitionIndex = 0;
-  private Integer numBatchesFetched = 0;
+  private String cursorMark="*";
+  private String fullQuery;
+  private String nextCursorMark;
 
 
   public IncrementalExtractIterator(IncrementalExtractionSample ies,
@@ -102,7 +103,7 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     return nextResult;
   }
 
-  public void getNextDocs(String type){
+  private void getNextDocs(String type){
     ResultsBatch<T> response = ies.getResultsBatch(type, fullQuery, cursorMark);
     results = response.getResults();
     nextCursorMark = response.getCursorMark();
@@ -110,15 +111,20 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     resultIndex = 0; //start from beginning
   }
 
+  private void updateFullQuery(String userQuery, List<String> extractorRunIds){
+    String extractorString = ClientUtils.buildConjunctiveClause("extractorRunId", extractorRunIds);
+    fullQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
+  }
+
   @Override
   public void remove() {
     throw new UnsupportedOperationException();
   }
 
+  /** Returns the number of API calls that have made with different queries
+   * and cursors
+   *
+   * @return number of API calls made
+   */
   public Integer getNumBatchesFetched(){ return numBatchesFetched; }
-
-  private void updateFullQuery(String userQuery, List<String> extractorRunIds){
-    String extractorString = ClientUtils.buildConjunctiveClause("extractorRunId", extractorRunIds);
-    fullQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
-  }
 }

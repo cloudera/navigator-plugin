@@ -22,11 +22,17 @@ import java.util.Iterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.http.HttpHeaders;
-/**
- * Created by Nadia.Wallace on 6/16/15.
+
+/** A set of functions for forming and handling URLs and  Solr queries.
+ *
  */
 public class ClientUtils {
 
+  /**Form headers for sending API calls to the Navigator server
+   *
+   * @param config plugin configuration to get authorization info from
+   * @return HttpHeaders headers for authorizing the plugin
+   */
   public static HttpHeaders getAuthHeaders(PluginConfigurations config) {
     // basic authentication with base64 encoding
     String plainCreds = String.format("%s:%s", config.getUsername(),
@@ -39,7 +45,7 @@ public class ClientUtils {
     return headers;
   }
 
-  /**
+  /**Get url for querying all sources
    *
    * @return url for querying all sources
    */
@@ -51,7 +57,8 @@ public class ClientUtils {
     //return String.format("%s?query=%s", entities, SOURCE_QUERY);
   }
 
-  /**
+  /** Get URL for incremental extraction
+   *
    * @param type "entities", "relations"
    * @return url for querying entities and relations
    */
@@ -63,17 +70,36 @@ public class ClientUtils {
     } else { return typeUrl;}
   }
 
+  /** Joining two URL components properly by handling slashes
+   *
+   * @param base First part of the URL
+   * @param component Second part of the URL
+   * @return String url of base/component
+   */
   private static String joinUrlPath(String base, String component) {
     return base + (base.endsWith("/") ? "" : "/") + component;
   }
 
+  /** Makes a conjunctive "AND" Solr query with two clauses.
+   *
+   * @param q1 Solr query string
+   * @param q2 Solr query string
+   * @return (q1) AND (q2)
+   */
   public static String conjoinSolrQueries(String q1, String q2){
     if(q1.isEmpty()){ return q2; }
     if(q2.isEmpty()){ return q1; }
-    return q1 + " AND " + q2 ;
+    return "(" + q1 + ") AND (" + q2 + ")";
   }
 
-  public static String buildConjunctiveClause(String fieldName, Iterable<String> values){
+  /** Constructs a single conjunctive clause of values with "OR"
+   *
+   * @param fieldName field name that clause values can satisfy
+   * @param values iterable of possible values
+   * @return conjunctive clause string as fieldName:(a OR b ...)
+   */
+  public static String buildConjunctiveClause(String fieldName,
+                                              Iterable<String> values){
     String orQuery = fieldName+":(";
     Iterator<String> valuesIterator = values.iterator();
     while(valuesIterator.hasNext()){
@@ -83,11 +109,12 @@ public class ClientUtils {
     return orQuery.substring(0, orQuery.length()-4)+")";
   }
 
-  /** Convert desired values to valid query string in solr syntax
+  /** Convert desired values to valid query string in solr syntax in
+   * conjunctive normal form as sourceType:(i OR j ...) AND type:(a OR b ...)
    *
-   * @param sourceTypes
-   * @param types
-   * @return
+   * @param sourceTypes collection of sourceType field values
+   * @param types collection of type field values
+   * @return Conjunctive clauses of sourceTypes and types
    */
   public static String queryBuilder(Collection<String> sourceTypes,
                              Collection<String> types){

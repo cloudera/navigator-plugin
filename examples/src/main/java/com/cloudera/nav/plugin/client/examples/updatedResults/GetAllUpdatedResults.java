@@ -27,7 +27,6 @@ import java.util.Map;
  * relations modified since a given set of extractions. Intended as initial
  * bulk extraction to generate the first marker.
  *
- * Created by Nadia.Wallace on 6/4/15.
  */
 public class GetAllUpdatedResults {
 

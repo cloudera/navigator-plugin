@@ -18,9 +18,9 @@ package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 import java.util.Iterator;
 
-/**UpdatedResults will have one for entities and one for relations
+/**Iterable used for entities and relations in UpdatedResults object returned
+ * by getAllUpdated() calls.
  *
- * Created by Nadia.Wallace on 6/19/15.
  */
 public class IncrementalExtractIterable<T> implements Iterable<T> {
 

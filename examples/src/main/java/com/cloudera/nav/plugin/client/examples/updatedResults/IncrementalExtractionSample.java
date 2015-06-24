@@ -41,8 +41,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Created by Nadia.Wallace on 6/16/15.
+/** Sample for showing incremental extraction using the plugin client library. The
+ * getAllUpdated() method has signatures for calling with and without a marker,
+ * and with specifying a filter query string for entities and relations to be
+ * returned.
+ *
+ * If no marker is passed in, all entities and relations will be returned. Obtain
+ * a starting marker from the result of getAllUpdated() with {result}.getMarker().
+ *
  */
 public class IncrementalExtractionSample {
 
@@ -61,7 +67,8 @@ public class IncrementalExtractionSample {
   /** Returns all of the entities and relations in the database,
    * plus a marker to denote when this search took place
    *
-   * @return
+   * @return UpdatedResults wrapper with iterables for all entities and relations
+   * and string of next marker
    */
   public UpdatedResults getAllUpdated(){
     UpdatedResults updatedResults;
@@ -78,11 +85,12 @@ public class IncrementalExtractionSample {
 
 
 
-  /**Returns all of the entities and relations in the database that have been
-   * updated or added since the source iterations indicated by the marker
+  /** Perform incremental extraction for the entities and relations in the
+   * database that have been updated or added since the extraction indicated by the marker.
    *
-   * @param markerRep JSON representation of sourceId : sourceExtractIteration
-   * @return
+   * @param markerRep String from previous getAllUpdated call
+   * @return UpdatedResults wrapper with iterables for updated entities and relations
+   * and string of the next marker
    */
 
   public UpdatedResults getAllUpdated(String markerRep){
@@ -104,12 +112,15 @@ public class IncrementalExtractionSample {
     }
   }
 
-  /**To query without a marker, pass null as markerRep --> REDESIGN
+  /**Perform an incremental extraction for all entities and relations that
+   * satisfy the specified queries and have been added or updated since the extraction
+   * indicated by the marker.
    *
-   * @param markerRep
-   * @param entitiesQuery
-   * @param relationsQuery
-   * @return
+   * @param markerRep String from previous getAllUpdated call
+   * @param entitiesQuery Solr query string for specifying entities
+   * @param relationsQuery Solr query string for specifying relations
+   * @return UpdatedResults wrapper with iterables for resulting updated entities
+   * and relations and string of the next marker
    */
   public UpdatedResults getAllUpdated(String markerRep,
                                       String entitiesQuery,
@@ -132,11 +143,10 @@ public class IncrementalExtractionSample {
     }
   }
 
-  /** Generate marker from each source and its sourceExtractIteration
+  /** Generate marker from each source and its sourceExtractIteration that
+   * can be used to form extractorRunIds
    *
-   * @return
-   *
-   * Public for testing
+   * @return Map of sourceId to its to extractIteration
    */
   private Map<String, Integer> getCurrentMarker(){
     Collection<Source> sources = client.getAllSources();
@@ -154,12 +164,12 @@ public class IncrementalExtractionSample {
   }
 
 
-  /** Constructs a query in Solr syntax as "<extractorRunId1> OR <extractorRunId2> ..."
-   * for all extraction iterations per source between m1 and m2
+  /** Returns an iterable of all possible extractorRunIds in between the extraction
+   * states specified by marker m1 and marker m2.
    *
-   * @param m1
-   * @param m2
-   * @return
+   * @param m1 Marker for past extraction state
+   * @param m2 Marker for later(current) extraction state
+   * @return Iterable of possible extractorRunIds to be used in queries
    */
   private Iterable<String> getExtractorQueryList(Map<String, Integer> m1,
                                          Map<String, Integer> m2){
@@ -176,13 +186,14 @@ public class IncrementalExtractionSample {
   /** Constructs an UpdatedResults object with results of getAllPages
    * for entities and relations, and the marker used to generate these results.
    *
-   * @param markerRep
-   * @param entitiesQuery
-   * @param relationsQuery
+   * @param markerRep String marker from previous getAllUpdated call
+   * @param extractorRunIds List of possible extractorRunIds
+   * @param entitiesQuery Query string for filtering entities to extract
+   * @param relationsQuery Query string filtering relations to extract
    * @return
    *
-   * Public for testing only
    */
+  @VisibleForTesting
   public UpdatedResults aggUpdatedResults(String markerRep,
                                           Iterable<String> extractorRunIds,
                                           String entitiesQuery,
@@ -199,14 +210,14 @@ public class IncrementalExtractionSample {
   }
 
   /** Constructs url from a type (entity or relation), query, and cursorMark.
-   *  Returns a response batch.
-   * Called in next() of IncrementalExtractIterator()
+   *  Returns a batch of results that satisfy the query, starting from
+   *  the cursorMark. Called in next() of IncrementalExtractIterator()
    *
-   * @param type
-   * @param queryString
-   * @return
+   * @param type "entities" ,"relations"
+   * @param queryString Solr query string
+   * @return ResultsBatch set of results that satisfy query and next cursor
    */
-  public <T> ResultsBatch<T> getResultsBatch(String type,
+  protected <T> ResultsBatch<T> getResultsBatch(String type,
                                       String queryString,
                                       String cursorMark){
 
@@ -218,10 +229,11 @@ public class IncrementalExtractionSample {
     return response;
   }
 
-  /**
-   * USED FOR POST METHOD
+  /** Constructs a  POST Request from the given URL and body and returns the
+   * response body contains a batch of results.
    *
-   * public for testing only
+   * @return ResultsBatch of entities or relations that specify the
+   * query parameters in the URL and request body
    */
   @VisibleForTesting
   public <T> ResultsBatch<T> navResponse(String url,  Map<String,String> formData){
@@ -236,7 +248,11 @@ public class IncrementalExtractionSample {
     return responseResult;
   }
 
-
+  /** Writes the marker for the current state of the sources as a string
+   *
+   * @return String representation of a marker
+   */
+  @VisibleForTesting
   public String getMarker(){
     Map<String, Integer> currentMarker = getCurrentMarker();
     try {
@@ -247,5 +263,9 @@ public class IncrementalExtractionSample {
     }
   }
 
+  /**Getter method for NavApiCient
+   *
+   * @return NavApiClient client used by these methods
+   */
   public NavApiCient getClient(){ return client; }
 }

@@ -17,10 +17,10 @@
 package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * Created by Nadia.Wallace on 6/11/15.
+/** Wrapper class for a batch of results from a Solr query. Contains a list of
+ * results and a cursor string that can be used to retrieve the next batch.
+ *
  */
 public class ResultsBatch<T>  {
   private String cursorMark;

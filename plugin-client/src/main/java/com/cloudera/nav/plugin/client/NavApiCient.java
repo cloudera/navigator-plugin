@@ -169,4 +169,8 @@ public class NavApiCient {
       }
     }
   }
+
+  public Logger getLogger(){
+    return LOG;
+  }
 }
