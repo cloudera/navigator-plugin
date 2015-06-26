@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class PluginConfigurationFactoryTest {
 

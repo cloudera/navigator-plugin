@@ -14,20 +14,33 @@
  * limitations under the License.
  */
 
-package com.cloudera.nav.plugin.model;
+package com.cloudera.nav.plugin.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-
+import org.junit.Before;
 import org.junit.Test;
 
-public class MD5IdGeneratorTest {
+/** Test for helper functions in ClientUtils
+ *
+ */
+public class ClientUtilsTest {
+
+  @Before
+  public void setUp(){
+
+  }
 
   @Test
-  public void testBasic() {
-    String hash = MD5IdGenerator.generateIdentity("foo");
-    assertEquals(MD5IdGenerator.generateIdentity("foo"), hash);
-    assertNotEquals(MD5IdGenerator.generateIdentity("bar"), hash);
-    assertEquals(hash.length(), 32);
+  public void testGetUrl(){
+    //ClientUtils.getUrl()
+  }
+
+  @Test
+  public void testSolrClause(){
+
+  }
+
+  @Test
+  public void testSolrQuery(){
+
   }
 }

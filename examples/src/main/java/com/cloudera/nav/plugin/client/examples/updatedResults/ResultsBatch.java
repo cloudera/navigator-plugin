@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package com.cloudera.nav.plugin.model;
+package com.cloudera.nav.plugin.client.examples.updatedResults;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import java.util.List;
 
-import org.junit.Test;
+/** Wrapper class for a batch of results from a Solr query. Contains a list of
+ * results and a cursor string that can be used to retrieve the next batch.
+ *
+ */
+public class ResultsBatch<T>  {
+  private String cursorMark;
+  private List<T> results;
 
-public class MD5IdGeneratorTest {
+  public List<T> getResults() { return results; }
 
-  @Test
-  public void testBasic() {
-    String hash = MD5IdGenerator.generateIdentity("foo");
-    assertEquals(MD5IdGenerator.generateIdentity("foo"), hash);
-    assertNotEquals(MD5IdGenerator.generateIdentity("bar"), hash);
-    assertEquals(hash.length(), 32);
-  }
+  public void setResults(List<T> results)  { this.results = results; }
+
+  public String getCursorMark(){ return cursorMark;  }
+
+  public void setCursorMark(String cursorMark) { this.cursorMark = cursorMark; }
+
 }

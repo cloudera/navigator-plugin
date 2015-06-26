@@ -23,7 +23,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 import org.apache.commons.configuration.MapConfiguration;
-import org.junit.*;
+import org.junit.Before;
 
 public class PigIdGeneratorTest {
 

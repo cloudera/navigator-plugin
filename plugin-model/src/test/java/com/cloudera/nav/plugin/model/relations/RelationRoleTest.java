@@ -16,14 +16,15 @@
 
 package com.cloudera.nav.plugin.model.relations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class RelationRoleTest {
 

@@ -16,36 +16,27 @@
 package com.cloudera.nav.plugin.client;
 
 
-import com.cloudera.com.fasterxml.jackson.core.type.TypeReference;
-import com.cloudera.com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.*;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * An API client to communicate with Navigator to register and validate
@@ -56,7 +47,6 @@ public class NavApiCient {
 
   private static final Logger LOG = LoggerFactory.getLogger(NavApiCient.class);
   private static final String SOURCE_QUERY = "type:SOURCE";
-  private static final String ALL_QUERY = "type:*";
 
   private final PluginConfigurations config;
   private final Cache<String, Source> sourceCacheByUrl;
@@ -178,5 +168,9 @@ public class NavApiCient {
         throw Throwables.propagate(e);
       }
     }
+  }
+
+  public Logger getLogger(){
+    return LOG;
   }
 }
