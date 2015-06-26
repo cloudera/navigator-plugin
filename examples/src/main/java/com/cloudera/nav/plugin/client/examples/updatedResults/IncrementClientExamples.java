@@ -56,7 +56,9 @@ public class IncrementClientExamples {
     getFirstResult(HdfsSingleSource);
   }
 
-  public static void getHive(IncrementalExtractionSample ies, String marker){
+  public static void getHive(IncrementalExtractionSample ies,
+                             String marker,
+                             String colName){
     Iterable<Map<String, Object>> hiveDb = ies.getAllUpdated(marker,
         "sourceType:HIVE AND type:DATABASE", "").getEntities();
     getFirstResult(hiveDb);
@@ -71,7 +73,7 @@ public class IncrementClientExamples {
 
     Iterable<Map<String, Object>> hiveColumn = ies.getAllUpdated(marker,
         "sourceType:HIVE AND type:FIELD " +
-        "AND orginalName:desired_column_name", "").getEntities();
+        "AND originalName:"+colName, "").getEntities();
     getFirstResult(hiveColumn);
 
     Iterable<Map<String, Object>> hiveTableToFile = ies.getAllUpdated(marker,
@@ -116,7 +118,7 @@ public class IncrementClientExamples {
     getFirstResult(yarnOperationEntities2);
 
     Iterable<Map<String, Object>> yarnOperationRelations = ies.getAllUpdated(marker,
-        "sourceType: (MAPREDUCE OR YARN) AND type:OPERATION_EXECUTION", "type:DATA_FLOW " +
+        "sourceType:(MAPREDUCE OR YARN) AND type:OPERATION_EXECUTION", "type:DATA_FLOW " +
             "AND endpoint1SourceType:HDFS OR endpoint2SourceType:HDFS").getRelations();
     getFirstResult(yarnOperationRelations);
     //Further data processing with iterable.iterator()
@@ -128,7 +130,7 @@ public class IncrementClientExamples {
     Iterator<Map<String, Object>> iterator = iterable.iterator();
     if(iterator.hasNext()) {
       Map<String, Object> result = iterator.next();
-      System.out.println("source: " + result.get("sourceType") + "type: " + result.get("type"));
+      System.out.println("source: " + result.get("sourceType") + "\n type: " + result.get("type"));
     } else {
       System.out.println("no elements found");
     }
@@ -147,10 +149,10 @@ public class IncrementClientExamples {
 //    } catch(InterruptedException e) {
 //      throw Throwables.propagate(e);
 //    }
-    getHDFSEntities(ies, marker);
-    getHive(ies, marker);
-    getHiveOperations(ies, marker);
-    getMRandYarn(ies, marker);
+    getHDFSEntities(ies, "");
+    getHive(ies, "", "city_id");
+    getHiveOperations(ies, "");
+    getMRandYarn(ies, "");
   }
 
 }

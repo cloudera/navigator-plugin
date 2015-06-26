@@ -89,7 +89,7 @@ public class ClientUtils {
   public static String conjoinSolrQueries(String q1, String q2){
     if(q1.isEmpty()){ return q2; }
     if(q2.isEmpty()){ return q1; }
-    return "(" + q1 + ") AND (" + q2 + ")";
+    return q1 + " AND " + q2 ;
   }
 
   /** Constructs a single conjunctive clause of values with "OR"

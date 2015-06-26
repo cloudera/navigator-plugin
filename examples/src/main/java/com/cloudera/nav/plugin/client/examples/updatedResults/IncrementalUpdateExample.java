@@ -22,6 +22,7 @@ import com.cloudera.nav.plugin.client.PluginConfigurations;
 import com.google.common.base.Throwables;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -38,7 +39,7 @@ import java.util.Map;
  */
 public class IncrementalUpdateExample {
   public static String  mostRecentMarker;
-  public static String markerFilePath="./testMarker.txt";
+  public static String markerFilePath="testMarker.txt";
 
   public static void main(String[] args) {
     // setup the plugin and api client
@@ -48,36 +49,37 @@ public class IncrementalUpdateExample {
     //NavigatorPlugin plugin = new NavigatorPlugin(config);
     NavApiCient client = new NavApiCient(config);
 
-    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":600," +
-                      "\"4fbdadc6899638782fc8cb626176dc7b\":600," +
-                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":600," +
-                      "\"a063e69e6c0660353dc378c836837935\":600," +
-                      "\"a09b0233cc58ff7d601eaa68673a20c6\":600}";
+    String marker = "{\"4fb48492c18e21ae5be9c2f7faeffe62\":800," +
+                      "\"4fbdadc6899638782fc8cb626176dc7b\":800," +
+                      "\"efd3b52ca1bebb19990a0a92c7ff6b89\":800," +
+                      "\"a063e69e6c0660353dc378c836837935\":800," +
+                      "\"a09b0233cc58ff7d601eaa68673a20c6\":800}";
 
-//    String markerFromFile="";
-//    try {
-//      FileReader fr = new FileReader(markerFilePath);
-//      BufferedReader markerReader = new BufferedReader(fr);
-//      while(markerReader.readLine()!=null){
-//        markerFromFile+=markerReader.readLine();
-//      }
-//      markerReader.close();
-//      fr.close();
-//    } catch(IOException e){
-//      throw Throwables.propagate(e);
-//    }
+    String markerFromFile="";
+    try {
+      File markerFile = new File(markerFilePath);
+      System.out.println((markerFile.exists()) && markerFile.canRead());
+      FileReader fr = new FileReader(markerFile);
+      BufferedReader markerReader = new BufferedReader(fr);
+      markerFromFile = markerReader.readLine();
+      markerReader.close();
+      fr.close();
+    } catch(IOException e){
+      throw Throwables.propagate(e);
+    }
 
     IncrementalExtractionSample ies = new IncrementalExtractionSample(client);
 
     UpdatedResults rs = ies.getAllUpdated(marker);
     //UpdatedResults rs = ies.getAllUpdated(markerFromFile);
     String nextMarker = rs.getMarker();
-//    try {
-//      PrintWriter markerWriter = new PrintWriter(markerFilePath, "UTF-8");
-//      markerWriter.println(nextMarker);
-//    } catch(IOException e) {
-//      throw Throwables.propagate(e);
-//    }
+    try {
+      PrintWriter markerWriter = new PrintWriter(markerFilePath, "UTF-8");
+      markerWriter.println(nextMarker);
+      markerWriter.close();
+    } catch(IOException e) {
+      throw Throwables.propagate(e);
+    }
 
     IncrementalExtractIterable<Map<String, Object>> en = rs.getEntities();
     IncrementalExtractIterator<Map<String, Object>> entitiesIterator = en.iterator();

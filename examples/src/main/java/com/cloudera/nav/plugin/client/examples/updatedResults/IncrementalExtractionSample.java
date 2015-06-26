@@ -125,6 +125,7 @@ public class IncrementalExtractionSample {
   public UpdatedResults getAllUpdated(String markerRep,
                                       String entitiesQuery,
                                       String relationsQuery){
+
     UpdatedResults updatedResults;
     TypeReference<Map<String, Integer>> typeRef =
         new TypeReference<Map<String, Integer>>(){};
@@ -132,9 +133,14 @@ public class IncrementalExtractionSample {
     try {
       String currentMarkerRep =
           new ObjectMapper().writeValueAsString(currentMarker);
-      Map<String, Integer> marker =
-          new ObjectMapper().readValue(markerRep, typeRef);
-      Iterable<String> extractorQuery = getExtractorQueryList(marker, currentMarker);
+      Iterable<String> extractorQuery;
+      if(!markerRep.isEmpty()) {
+        Map<String, Integer> marker =
+            new ObjectMapper().readValue(markerRep, typeRef);
+        extractorQuery = getExtractorQueryList(marker, currentMarker);
+      } else {
+        extractorQuery = Lists.newArrayList("*");
+      }
       updatedResults = aggUpdatedResults(currentMarkerRep, extractorQuery,
                                           entitiesQuery, relationsQuery);
       return updatedResults;
@@ -217,7 +223,8 @@ public class IncrementalExtractionSample {
    * @param queryString Solr query string
    * @return ResultsBatch set of results that satisfy query and next cursor
    */
-  protected <T> ResultsBatch<T> getResultsBatch(String type,
+  @VisibleForTesting
+  public <T> ResultsBatch<T> getResultsBatch(String type,
                                       String queryString,
                                       String cursorMark){
 
@@ -235,8 +242,7 @@ public class IncrementalExtractionSample {
    * @return ResultsBatch of entities or relations that specify the
    * query parameters in the URL and request body
    */
-  @VisibleForTesting
-  public <T> ResultsBatch<T> navResponse(String url,  Map<String,String> formData){
+  private <T> ResultsBatch<T> navResponse(String url,  Map<String,String> formData){
     ParameterizedTypeReference<ResultsBatch<T>> resultClass =
         new ParameterizedTypeReference<ResultsBatch<T>>(){};
     RestTemplate restTemplate = new RestTemplate();

@@ -18,6 +18,7 @@ package com.cloudera.nav.plugin.client.examples.updatedResults;
 
 
 import com.cloudera.nav.plugin.client.ClientUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 
 import java.util.Iterator;
@@ -59,11 +60,11 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     this.partitionedRunIds = Iterables.partition(extractorRunIds, MAX_QUERY_PARTITION_SIZE);
     this.partitionIterator = partitionedRunIds.iterator();
     if(!Iterables.isEmpty(extractorRunIds)) {
-      updateFullQuery(userQuery, partitionIterator.next());
+      updateFullQuery();
     } else {
       fullQuery = userQuery;
     }
-    getNextDocs(type);
+    getNextDocs();
   }
 
   @Override
@@ -80,39 +81,45 @@ public class IncrementalExtractIterator<T> implements Iterator<T> {
     resultIndex++;
     //if at last element in docs
     if(resultIndex == results.size()){
-        //if on last batch
-        if (results.size() < limit) {
-          //if on last query
-          if(!partitionIterator.hasNext()) {
-            hasNext = false; //leave loop
-          //else get next query
-          } else {
-            updateFullQuery(userQuery, partitionIterator.next());
-            cursorMark="*";
-            getNextDocs(type); //placement?
-          }
-        //else fetch next batch
+      //if on last batch
+      if(results.size()<limit) {
+        //if on last query
+        if (!partitionIterator.hasNext()) {
+          hasNext = false; //leave loop
         } else {
-          cursorMark = nextCursorMark;
-          nextCursorMark = null;
-          getNextDocs(type);
+          updateFullQuery();
+          getNextDocs();
+          numBatchesFetched++;
         }
-       //adds more results, resets resultIndex, updates hasNext + nextCursorMark
-      numBatchesFetched++;
+      //fetch next batch
+      } else {
+        cursorMark = nextCursorMark;
+        nextCursorMark = null;
+        getNextDocs();
+        numBatchesFetched++;
+      }
     }
     return nextResult;
   }
 
-  private void getNextDocs(String type){
+  @VisibleForTesting
+  public void getNextDocs(){
     ResultsBatch<T> response = ies.getResultsBatch(type, fullQuery, cursorMark);
     results = response.getResults();
     nextCursorMark = response.getCursorMark();
     hasNext = results.size() > 0;
     resultIndex = 0; //start from beginning
+    if(!hasNext && partitionIterator.hasNext()) {
+      updateFullQuery();
+      getNextDocs();
+    }
   }
 
-  private void updateFullQuery(String userQuery, List<String> extractorRunIds){
-    String extractorString = ClientUtils.buildConjunctiveClause("extractorRunId", extractorRunIds);
+
+  private void updateFullQuery(){
+    cursorMark="*";
+    List<String> extractorRunIdNext = partitionIterator.next();
+    String extractorString = ClientUtils.buildConjunctiveClause("extractorRunId", extractorRunIdNext);
     fullQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
   }
 
