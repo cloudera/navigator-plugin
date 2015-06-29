@@ -15,8 +15,12 @@
  */
 package com.cloudera.nav.plugin.client;
 
+
+import com.cloudera.com.fasterxml.jackson.core.type.TypeReference;
+import com.cloudera.com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudera.nav.plugin.model.Source;
 import com.cloudera.nav.plugin.model.SourceType;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
@@ -25,13 +29,15 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import java.util.Collection;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -46,6 +52,7 @@ public class NavApiCient {
 
   private static final Logger LOG = LoggerFactory.getLogger(NavApiCient.class);
   private static final String SOURCE_QUERY = "type:SOURCE";
+  private static final String ALL_QUERY = "type:*";
 
   private final PluginConfigurations config;
   private final Cache<String, Source> sourceCacheByUrl;
@@ -71,17 +78,104 @@ public class NavApiCient {
    * @return a collection of available sources
    */
   public Collection<Source> getAllSources() {
+    System.out.println("here");
     RestTemplate restTemplate = new RestTemplate();
-    String url = getSourceUrl();
+    String url = getUrl();
     HttpHeaders headers = getAuthHeaders();
+    System.out.println(headers);
     HttpEntity<String> request = new HttpEntity<String>(headers);
+    Class<SourceAttrs[]> sourceAttrsClass = SourceAttrs[].class;
     ResponseEntity<SourceAttrs[]> response = restTemplate.exchange(url,
-        HttpMethod.GET, request, SourceAttrs[].class);
+        HttpMethod.GET, request, sourceAttrsClass);
+//    ResponseEntity<SourceAttrs[]> response = restTemplate.getForEntity(url, )
+    System.out.println(response);
     Collection<Source> sources = Lists.newArrayList();
     for (SourceAttrs info : response.getBody()) {
       sources.add(info.createSource());
     }
     return sources;
+  }
+  /** Returns all of the entities and relations in the database, plus a marker to denote when this search took place
+   *
+   * @return
+   */
+  public UpdatedResults getAllUpdated(){
+    UpdatedResults updatedResults;
+    Map<String, Integer> currentMarker = getCurrentMarker();
+    try {
+      String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
+      String queryString = "";
+      updatedResults = aggUpdatedResults(currentMarkerRep, queryString);
+      return updatedResults;
+    } catch (IOException e){
+      System.err.println(e.getMessage());
+      throw Throwables.propagate(e);
+    }
+  }
+
+  /**Returns all of the entities and relations in the database that have been updated or added since the source iterations indicated by the marker
+   *
+   * @param markerRep JSON representation of sourceId : sourcesourceExtractIteration
+   * @return
+   */
+
+  public UpdatedResults getAllUpdated(String markerRep){
+    UpdatedResults updatedResults;
+    Map<String, Integer> currentMarker = getCurrentMarker();
+    try {
+      String currentMarkerRep = new ObjectMapper().writeValueAsString(currentMarker);
+      Map<String, Integer> marker = new ObjectMapper().readValue(markerRep, new TypeReference<Map<String, Integer>>(){});
+      String extractorQueryString = getExtractorQueryString(marker, currentMarker);
+      updatedResults = aggUpdatedResults(currentMarkerRep, extractorQueryString);
+      return updatedResults;
+    } catch (IOException e) {
+      System.err.println(e.getMessage());
+      throw Throwables.propagate(e);
+    }
+  }
+
+  public UpdatedResults aggUpdatedResults(String markerRep, String queryString){
+    UpdatedResults updatedResults;
+    Map<String, Integer> currentMarker = getCurrentMarker();
+    ParameterizedTypeReference<Map<String, Object>[]> mapRef = new ParameterizedTypeReference<Map<String, Object>[]>(){};
+    Map<String, Object>[] entityResult = navResponse("entities", queryString, mapRef);
+    System.out.println("ENTITIES: \n"+ entityResult.toString());
+    Map<String, Object>[] relationsResult = navResponse("relations", queryString, mapRef);
+    UpdatedResults res = new UpdatedResults(markerRep, Arrays.asList(entityResult), Arrays.asList(relationsResult));
+    return res;
+  }
+
+  /**
+   *
+   * @param type
+   * @param extractorQuery
+   * @param resultClass
+   * @param <T>
+   * @return
+   */
+  public <T> T navResponse(String type, String extractorQuery, ParameterizedTypeReference<T> resultClass){
+    RestTemplate restTemplate = new RestTemplate();
+    HttpHeaders headers = getAuthHeaders();
+    HttpEntity<String> request =new HttpEntity<String>(headers);
+    String url = getUrl(type, extractorQuery);;
+    ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, request, resultClass);
+    T responseResult = response.getBody();
+    return responseResult;
+  }
+
+  /**
+   *
+   * @return
+   */
+  public Map<String, Integer> getCurrentMarker(){
+    Collection<Source> sources = getAllSources(); // Replace with sourceCacheByUrl and loadAllSources ?
+    HashMap<String, Integer> newMarker = new HashMap<>();
+    for (Source source : sources){
+      String id = source.getIdentity();
+      Integer sourceExtractIteration = source.getSourceExtractIteration();
+      newMarker.put(id, sourceExtractIteration);
+    }
+    return newMarker;
   }
 
   /**
@@ -146,15 +240,42 @@ public class NavApiCient {
     return headers;
   }
 
-  private String getSourceUrl() {
+  /**
+   *
+   * @return url for querying all sources
+   */
+  private String getUrl() {
     // form the url string to request all entities with type equal to SOURCE
     String baseNavigatorUrl = config.getNavigatorUrl();
     String entities = joinUrlPath(baseNavigatorUrl, "entities");
-    return String.format("%s?query=%s", entities, SOURCE_QUERY);
+    return String.format("%s?query=%s%s", entities, SOURCE_QUERY, "&debugQuery=on");
+  }
+
+  /**
+   * @param type "entities", "relations"
+   * @param queryString result of getExtractorQueryString  made of desired extractorRunId's
+   * @return url for querying entities and relations
+   */
+  private String getUrl(String type, String queryString) {
+    String baseNavigatorUrl = config.getNavigatorUrl();
+    String typeUrl = joinUrlPath(baseNavigatorUrl, type);
+    return joinUrlPath(typeUrl, queryString);
   }
 
   private String joinUrlPath(String base, String component) {
     return base + (base.endsWith("/") ? "" : "/") + component;
+  }
+
+  private String getExtractorQueryString(Map<String, Integer> m1, Map<String, Integer> m2){
+    HashSet<String> possibleExtractorRunIds = new HashSet<String>();
+    String queryString = "extractorRunId:(";
+    for (String key : m1.keySet()){
+      for (int i=m1.get(key); i==m2.get(key); i++){
+        String possible = key + "##" + Integer.toString(i);
+        queryString = queryString + possible + " OR ";
+      }
+    }
+    return queryString.substring(0,-4)+")";
   }
 
   private void loadAllSources() {
