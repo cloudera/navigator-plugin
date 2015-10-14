@@ -16,6 +16,9 @@
 
 package com.cloudera.nav.sdk.examples.tags;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloudera.nav.sdk.client.NavApiCient;
 import com.cloudera.nav.sdk.client.NavigatorPlugin;
 import com.cloudera.nav.sdk.client.writer.ResultSet;
@@ -38,15 +41,24 @@ public class SetHdfsFileTags {
   public static void main(String[] args) {
 
     // setup the plugin and api client
-    NavigatorPlugin plugin = NavigatorPlugin.fromConfigFile(args[0]);
+	  Map<String, Object> configMap = new HashMap<String, Object>();
+		configMap.put("navigator_url", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/");
+		configMap.put("username", "talend");
+		configMap.put("password", "Cloudera!!");
+		configMap.put("metadata_parent_uri", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/metadata/plugin");
+		configMap.put("autocommit", "true");
+		configMap.put("application_url", "http://localhost");
+		configMap.put("namespace", "talend");
+		
+    NavigatorPlugin plugin = NavigatorPlugin.fromConfigMap(configMap);
     NavApiCient client = plugin.getClient();
     Source fs = client.getOnlySource(SourceType.HDFS);
 
     // send tags for multiple entities to Navigator
-    HdfsEntity dir = new HdfsEntity("/user/hdfs", EntityType.DIRECTORY,
+    HdfsEntity dir = new HdfsEntity("/user/talend/dataoutput", EntityType.DIRECTORY,
         fs.getIdentity());
-    dir.setTags(Sets.newHashSet("HAS_SENSITIVE_FILES",
-        "CONTAINS_SOME_SUPER_SECRET_STUFF"));
+    dir.setTags(Sets.newHashSet("TALEND_TAG_5", "TALEND_TAG_6", "TALEND_TAG_7", "TALEND_TAG_8"));
+
 
     // Write metadata
     ResultSet results = plugin.write(dir);

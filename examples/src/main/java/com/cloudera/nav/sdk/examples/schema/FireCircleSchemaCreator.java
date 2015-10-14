@@ -16,6 +16,9 @@
 
 package com.cloudera.nav.sdk.examples.schema;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloudera.nav.sdk.client.NavigatorPlugin;
 import com.cloudera.nav.sdk.client.writer.ResultSet;
 import com.cloudera.nav.sdk.model.Source;
@@ -40,29 +43,35 @@ public class FireCircleSchemaCreator {
    */
   public static void main(String[] args) {
 
-    // initialize the plugin
-    NavigatorPlugin plugin = NavigatorPlugin.fromConfigFile(args[0]);
+	// setup the plugin and api client
+		  Map<String, Object> configMap = new HashMap<String, Object>();
+			configMap.put("navigator_url", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/");
+			configMap.put("username", "talend");
+			configMap.put("password", "Cloudera!!");
+			configMap.put("metadata_parent_uri", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/metadata/plugin");
+			configMap.put("autocommit", "true");
+			configMap.put("application_url", "http://localhost");
+			configMap.put("namespace", "talend");
+			
+	    NavigatorPlugin plugin = NavigatorPlugin.fromConfigMap(configMap);
 
     // get the HDFS source
     Source fs = plugin.getClient().getOnlySource(SourceType.HDFS);
 
     // specify the HDFS directory that contains the data
-    String path = args[1];
+    String path = "/user/talend/dataoutput";
     HdfsEntity container = new HdfsEntity(path, EntityType.DIRECTORY,
         fs.getIdentity());
 
     FireCircleDataset dataset = new FireCircleDataset();
-    dataset.setName("My Dataset");
+    dataset.setName("Talend Studio Output Dataset");
     dataset.setDataContainer(container);
     dataset.setFileFormat(FileFormat.CSV);
     // "4","4","2","","2008-07-31 00:00:00",""
     dataset.setFields(ImmutableList.of(
-        new FireCircleField("col1", "integer"),
-        new FireCircleField("col2", "integer"),
-        new FireCircleField("col3", "integer"),
-        new FireCircleField("col4", "string"),
-        new FireCircleField("col5", "date"),
-        new FireCircleField("col6", "string")
+        new FireCircleField("b", "String"),
+        new FireCircleField("c", "integer")
+
     ));
     // Write metadata
     ResultSet results = plugin.write(dataset);

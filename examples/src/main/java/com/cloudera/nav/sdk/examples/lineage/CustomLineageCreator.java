@@ -16,6 +16,9 @@
 
 package com.cloudera.nav.sdk.examples.lineage;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloudera.nav.sdk.client.NavigatorPlugin;
 import com.cloudera.nav.sdk.client.writer.ResultSet;
 
@@ -51,9 +54,23 @@ public class CustomLineageCreator {
    *             3. Pig execution id
    */
   public static void main(String[] args) {
-    CustomLineageCreator lineageCreator = new CustomLineageCreator(args[0]);
-    lineageCreator.setPigOperationId(args[1]);
-    lineageCreator.setPigExecutionId(args[2]);
+	  
+	// setup the plugin and api client
+	  Map<String, Object> configMap = new HashMap<String, Object>();
+		configMap.put("navigator_url", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/");
+		configMap.put("username", "talend");
+		configMap.put("password", "Cloudera!!");
+		configMap.put("metadata_parent_uri", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/metadata/plugin");
+		configMap.put("autocommit", "true");
+		configMap.put("application_url", "http://ip-192-168-100-9.ec2.internal:7187/");
+		configMap.put("namespace", "talend");
+		
+    CustomLineageCreator lineageCreator = new CustomLineageCreator(configMap);
+    
+    lineageCreator.setPigOperationId("2ee7c631c5369145b91733c5c3ec7e92");
+    
+    lineageCreator.setPigExecutionId("2ee7c631c5369145b91733c5c3ec7e92");
+    
     lineageCreator.run();
   }
 
@@ -64,6 +81,10 @@ public class CustomLineageCreator {
   public CustomLineageCreator(String configFilePath) {
     this.plugin = NavigatorPlugin.fromConfigFile(configFilePath);
   }
+  
+  public CustomLineageCreator(Map<String, Object> configMap) {
+	    this.plugin = NavigatorPlugin.fromConfigMap(configMap);
+	  }
 
   public void run() {
     // Create the template
@@ -102,7 +123,7 @@ public class CustomLineageCreator {
     script.setPigOperation(getPigOperationId());
     script.setName("Stetson Script");
     script.setOwner("Chang");
-    script.setDescription("I am a custom operation template");
+    script.setDescription("TALEND CUSTOM SCRIPT");
     return script;
   }
 
@@ -110,10 +131,10 @@ public class CustomLineageCreator {
     StetsonExecution exec = new StetsonExecution(plugin.getNamespace());
     exec.setPigExecution(getPigExecutionId());
     exec.setName("Stetson Execution");
-    exec.setDescription("I am a custom operation instance");
+    exec.setDescription("TALEND CUSTOM EXECUTION");
     exec.setLink("http://hasthelargehadroncolliderdestroyedtheworldyet.com/");
     exec.setStarted(Instant.now());
-    exec.setEnded((new Instant(Instant.now().toDate().getTime() + 10000)));
+    exec.setEnded(Instant.now());
     return exec;
   }
 }

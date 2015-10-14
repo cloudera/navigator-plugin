@@ -16,13 +16,16 @@
 
 package com.cloudera.nav.sdk.examples.lineage2;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.joda.time.Instant;
+
 import com.cloudera.nav.sdk.client.NavApiCient;
 import com.cloudera.nav.sdk.examples.lineage.CustomLineageCreator;
 import com.cloudera.nav.sdk.model.MD5IdGenerator;
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.SourceType;
-
-import org.joda.time.Instant;
 
 /**
  * In this example we show a more complex example of how to create custom entity
@@ -51,11 +54,23 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
    *             5. hdfs file system path of output
    */
   public static void main(String[] args) {
-    CustomLineageCreator2 lineageCreator = new CustomLineageCreator2(args[0]);
-    lineageCreator.setPigOperationId(args[1]);
-    lineageCreator.setPigExecutionId(args[2]);
-    lineageCreator.setInputPath(args[3]);
-    lineageCreator.setOutputPath(args[4]);
+	  
+	  Map<String, Object> configMap = new HashMap<String, Object>();
+		configMap.put("navigator_url", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/");
+		configMap.put("username", "talend");
+		configMap.put("password", "Cloudera!!");
+		configMap.put("metadata_parent_uri", "http://ip-192-168-100-9.ec2.internal:7187/api/v7/metadata/plugin");
+		configMap.put("autocommit", "true");
+		configMap.put("application_url", "http://localhost");
+		configMap.put("namespace", "talend");
+		
+    CustomLineageCreator2 lineageCreator = new CustomLineageCreator2(configMap);
+    
+    
+    lineageCreator.setPigOperationId("25");
+    lineageCreator.setPigExecutionId("26");
+    lineageCreator.setInputPath("/user/talend/datainput");
+    lineageCreator.setOutputPath("/user/talend/dataoutput");
     lineageCreator.run();
   }
 
@@ -65,6 +80,10 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
   public CustomLineageCreator2(String configFilePath) {
     super(configFilePath);
   }
+  
+  public CustomLineageCreator2(Map<String, Object> configMap) {
+	    super(configMap);
+	  }
 
   @Override
   protected StetsonExecution2 createExecution() {

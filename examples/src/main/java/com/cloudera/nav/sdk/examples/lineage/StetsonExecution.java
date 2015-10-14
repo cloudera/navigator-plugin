@@ -116,7 +116,7 @@ public class StetsonExecution extends Entity {
   }
 
   public void setPigExecution(String pigExecutionId) {
-    this.pigExecution = new EndPointProxy(pigExecutionId, SourceType.PIG,
+    this.pigExecution = new EndPointProxy(pigExecutionId, SourceType.MAPREDUCE,
         EntityType.OPERATION_EXECUTION);
   }
 
