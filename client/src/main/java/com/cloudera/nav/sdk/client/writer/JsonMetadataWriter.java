@@ -76,9 +76,19 @@ public class JsonMetadataWriter extends MetadataWriter {
     try {
       // request is not sent until response code is requested
       if (conn.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
+
+	// Response body
+	BufferedReader br = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
+	StringBuilder sb = new StringBuilder();
+	String responseBody;
+	while ((responseBody = br.readLine()) != null) {
+		sb.append(responseBody);
+	}
+	responseBody = sb.toString();
+
         throw new RuntimeException(String.format(
-            "Error writing metadata (code %s): %s", conn.getResponseCode(),
-            conn.getResponseMessage()));
+            "Error writing metadata (code %s): %s %s", conn.getResponseCode(),
+            conn.getResponseMessage(), responseBody));
       }
       lastResult = mapper.readValue(conn.getInputStream(), ResultSet.class);
     } catch (IOException e) {
