@@ -17,7 +17,6 @@ package com.cloudera.nav.sdk.client;
 
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.SourceType;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -51,11 +50,11 @@ public class NavApiCient {
   private static final String SOURCE_QUERY = "type:SOURCE";
   private static final String ALL_QUERY = "type:*";
 
-  private final PluginConfigurations config;
+  private final ClientConfig config;
   private final Cache<String, Source> sourceCacheByUrl;
   private final Cache<SourceType, Collection<Source>> sourceCacheByType;
 
-  public NavApiCient(PluginConfigurations config) {
+  public NavApiCient(ClientConfig config) {
     this.config = config;
     sourceCacheByUrl = CacheBuilder.newBuilder().build();
     sourceCacheByType = CacheBuilder.newBuilder().build();
@@ -63,6 +62,7 @@ public class NavApiCient {
 
   /**
    * Registers a given set of metadata models
+   *
    * @param models
    */
   public void registerModels(Collection<Object> models) {
@@ -75,7 +75,7 @@ public class NavApiCient {
    * @return a collection of available sources
    */
   public Collection<Source> getAllSources() {
-    RestTemplate restTemplate = new RestTemplate();
+    RestTemplate restTemplate = ClientUtils.newRestTemplate(config);
     String url = getUrl();
     HttpHeaders headers = getAuthHeaders();
     HttpEntity<String> request = new HttpEntity<String>(headers);
@@ -97,7 +97,7 @@ public class NavApiCient {
    * @return ResultsBatch set of results that satisfy query and next cursor
    */
   public ResultsBatch<Map<String, Object>> getRelationBatch(
-      MetadataQuery metadataQuery){
+      MetadataQuery metadataQuery) {
     String fullUrlPost = getUrl("relations");
     return queryNav(fullUrlPost, metadataQuery, RelationResultsBatch.class);
   }
@@ -106,7 +106,7 @@ public class NavApiCient {
    * {@link #getRelationBatch(MetadataQuery) getRelationBatch} with entities
    */
   public ResultsBatch<Map<String, Object>> getEntityBatch(
-      MetadataQuery metadataQuery){
+      MetadataQuery metadataQuery) {
     String fullUrlPost = getUrl("entities");
     return queryNav(fullUrlPost, metadataQuery, EntityResultsBatch.class);
   }
@@ -115,17 +115,17 @@ public class NavApiCient {
    * Constructs a POST Request from the given URL and body and returns the
    * response body contains a batch of results.
    *
-   * @param url URl being posted to
+   * @param url           URl being posted to
    * @param metadataQuery query criteria for metadata being retrieved to satisfy
-   *@param resultClass type of ResultsBatch to be returned
+   * @param resultClass   type of ResultsBatch to be returned
    * @return ResultsBatch of entities or relations that specify the
    * query parameters in the URL and request body
    */
   @VisibleForTesting
   public ResultsBatch<Map<String, Object>> queryNav(String url,
-         MetadataQuery metadataQuery,
-         Class<? extends ResultsBatch<Map<String, Object>>> resultClass){
-    RestTemplate restTemplate = new RestTemplate();
+                                                    MetadataQuery metadataQuery,
+                                                    Class<? extends ResultsBatch<Map<String, Object>>> resultClass) {
+    RestTemplate restTemplate = ClientUtils.newRestTemplate(config);
     HttpHeaders headers = getAuthHeaders();
     HttpEntity<MetadataQuery> request =
         new HttpEntity<MetadataQuery>(metadataQuery, headers);
@@ -213,7 +213,7 @@ public class NavApiCient {
   private String getUrl(String type) {
     String baseNavigatorUrl = config.getNavigatorUrl();
     String typeUrl = ClientUtils.joinUrlPath(baseNavigatorUrl, type);
-    return typeUrl+"/paging";
+    return typeUrl + "/paging";
   }
 
   private void loadAllSources() {

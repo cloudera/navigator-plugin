@@ -51,7 +51,7 @@ import org.junit.Test;
 public class JsonMetadataWriterTest {
 
   private ByteArrayOutputStream stream;
-  private PluginConfigurations config;
+  private ClientConfig config;
   private HttpURLConnection mockConn;
 
   @Before
@@ -59,7 +59,7 @@ public class JsonMetadataWriterTest {
     stream = new ByteArrayOutputStream();
     mockConn = mock(HttpURLConnection.class);
     doReturn(200).when(mockConn).getResponseCode();
-    config = mock(PluginConfigurations.class);
+    config = mock(ClientConfig.class);
     doReturn("test").when(config).getNamespace();
   }
 

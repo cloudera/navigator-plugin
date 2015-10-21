@@ -15,7 +15,8 @@
  */
 package com.cloudera.nav.sdk.client.writer;
 
-import com.cloudera.nav.sdk.client.PluginConfigurations;
+import com.cloudera.nav.sdk.client.ClientConfig;
+import com.cloudera.nav.sdk.client.ClientUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 
@@ -28,6 +29,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.net.util.Base64;
 import org.apache.hadoop.fs.FileSystem;
@@ -51,7 +54,7 @@ public class MetadataWriterFactory {
    * @return
    */
   @VisibleForTesting
-  static String getScheme(PluginConfigurations config) {
+  static String getScheme(ClientConfig config) {
     URI uri = config.getMetadataParentUri();
     String scheme = uri.getScheme();
     return scheme == null ? "" : scheme.toLowerCase();
@@ -65,7 +68,7 @@ public class MetadataWriterFactory {
    * @param config
    * @return
    */
-  public MetadataWriter newWriter(PluginConfigurations config) {
+  public MetadataWriter newWriter(ClientConfig config) {
     String scheme = getScheme(config);
     if (scheme.equals(HDFS) ) {
       throw new UnsupportedOperationException();
@@ -82,10 +85,10 @@ public class MetadataWriterFactory {
     }
   }
 
-  private HttpURLConnection createHttpStream(PluginConfigurations config)
+  private HttpURLConnection createHttpStream(ClientConfig config)
       throws IOException {
     URL url = new URL(config.getMetadataParentUri().toASCIIString());
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    HttpURLConnection conn = openConnection(url, config);
     conn.setRequestMethod("POST");
     String userpass = config.getUsername() + ":" + config.getPassword();
     String basicAuth = "Basic " + new String(Base64.encodeBase64(
@@ -97,7 +100,20 @@ public class MetadataWriterFactory {
     return conn;
   }
 
-  private OutputStream createLocalFileStream(PluginConfigurations config) {
+  private HttpURLConnection openConnection(URL url, ClientConfig config)
+      throws IOException {
+    if (ClientUtils.isSSL(url.toString())) {
+      HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+      conn.setHostnameVerifier(ClientUtils.getHostNameVerifier(config));
+      conn.setSSLSocketFactory(ClientUtils.getSSLContext(config)
+          .getSocketFactory());
+      return conn;
+    } else {
+      return (HttpURLConnection) url.openConnection();
+    }
+  }
+
+  private OutputStream createLocalFileStream(ClientConfig config) {
     String fileName = getFilePath(config.getMetadataParentUri().getPath());
     File file = new File(fileName);
     try {
@@ -112,7 +128,7 @@ public class MetadataWriterFactory {
     }
   }
 
-  private OutputStream createHdfsStream(PluginConfigurations config) {
+  private OutputStream createHdfsStream(ClientConfig config) {
     try {
       FileSystem fs = FileSystem.get(config.getHadoopConfigurations());
       Path path = new Path(getFilePath(config.getMetadataParentUriString()));
