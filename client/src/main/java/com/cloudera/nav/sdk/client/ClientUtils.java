@@ -17,10 +17,26 @@
 package com.cloudera.nav.sdk.client;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * A set of functions for forming and handling URLs and  Solr queries.
@@ -81,5 +97,68 @@ public class ClientUtils {
     String sourceClause = buildConjunctiveClause("sourceType", sourceTypes);
     String typeClause = buildConjunctiveClause("type", types);
     return conjoinSolrQueries(sourceClause, typeClause);
+  }
+
+  public static TrustManager getTrustManager(ClientConfig conf) {
+    if (conf.isDisableSSLValidation()) {
+      return new AcceptAllTrustManager();
+    }
+    // TODO a real one
+    return null;
+  }
+
+  public static boolean isSSL(String urlString) {
+    Preconditions.checkArgument(StringUtils.isNotEmpty(urlString));
+    return urlString.startsWith("https://");
+  }
+
+  public static SSLContext getSSLContext(ClientConfig config) {
+    try {
+      SSLContext ctx = SSLContext.getInstance("TLS");
+      ctx.init(null, new TrustManager[]{getTrustManager(config)}, null);
+      return ctx;
+    } catch (NoSuchAlgorithmException | KeyManagementException e) {
+      throw Throwables.propagate(e);
+    }
+  }
+
+  public static RestTemplate newRestTemplate(ClientConfig config) {
+    if (ClientUtils.isSSL(config.getNavigatorUrl())) {
+      CloseableHttpClient httpClient = HttpClients.custom()
+          .setSSLContext(ClientUtils.getSSLContext(config))
+          .setSSLHostnameVerifier(getHostNameVerifier(config))
+          .build();
+      HttpComponentsClientHttpRequestFactory requestFactory =
+          new HttpComponentsClientHttpRequestFactory();
+      requestFactory.setHttpClient(httpClient);
+      return new RestTemplate(requestFactory);
+    } else {
+      return new RestTemplate();
+    }
+  }
+
+  public static HostnameVerifier getHostNameVerifier(ClientConfig config) {
+    if (config.isDisableSSLValidation()) {
+      return new NoopHostnameVerifier();
+    }
+    // TODO a real one
+    return null;
+  }
+
+  private static class AcceptAllTrustManager implements X509TrustManager {
+
+    public void checkClientTrusted(X509Certificate[] xcs, String string)
+        throws CertificateException {
+      // no op
+    }
+
+    public void checkServerTrusted(X509Certificate[] xcs, String string)
+        throws CertificateException {
+      // no op
+    }
+
+    public X509Certificate[] getAcceptedIssuers() {
+      return null;
+    }
   }
 }

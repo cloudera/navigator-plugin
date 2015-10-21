@@ -15,7 +15,7 @@
  */
 package com.cloudera.nav.sdk.client.writer;
 
-import com.cloudera.nav.sdk.client.PluginConfigurations;
+import com.cloudera.nav.sdk.client.ClientConfig;
 import com.cloudera.nav.sdk.client.writer.registry.MClassRegistry;
 import com.cloudera.nav.sdk.client.writer.registry.MRelationEntry;
 import com.cloudera.nav.sdk.model.entities.EndPointProxy;
@@ -37,11 +37,11 @@ import org.apache.commons.lang.StringUtils;
  */
 public abstract class MetadataWriter {
 
-  protected final PluginConfigurations config;
+  protected final ClientConfig config;
   protected final OutputStream stream;
   protected final MClassRegistry registry;
 
-  public MetadataWriter(PluginConfigurations config, OutputStream stream) {
+  public MetadataWriter(ClientConfig config, OutputStream stream) {
     this.config = config;
     this.stream = stream;
     registry = new MClassRegistry();

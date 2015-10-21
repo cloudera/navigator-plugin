@@ -47,14 +47,14 @@ public class NavigatorPluginTest {
     mockWriter = mock(MetadataWriter.class);
     mockFactory = mock(MetadataWriterFactory.class);
     doReturn(mockWriter).when(mockFactory).newWriter(
-        any(PluginConfigurations.class));
+        any(ClientConfig.class));
   }
 
   @Test
   public void testWrite() {
     URL url = this.getClass().getClassLoader().getResource("nav_plugin.conf");
-    PluginConfigurationFactory factory = new PluginConfigurationFactory();
-    PluginConfigurations config = factory.readConfigurations(url.getPath());
+    ClientConfigFactory factory = new ClientConfigFactory();
+    ClientConfig config = factory.readConfigurations(url.getPath());
     NavigatorPlugin plugin = new NavigatorPlugin(config, mockFactory);
     HdfsEntity entity = new HdfsEntity();
     entity.setIdentity("foo");

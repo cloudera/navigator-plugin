@@ -27,7 +27,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 /**
  * Create PluginConfiguration instance
  */
-public class PluginConfigurationFactory {
+public class ClientConfigFactory {
 
   // expected property names
   public static final String APP_URL = "application_url";
@@ -37,6 +37,8 @@ public class PluginConfigurationFactory {
   public static final String NAV_URL = "navigator_url";
   public static final String USERNAME = "username";
   public static final String PASSWORD = "password";
+  public static final String AUTOCOMMIT = "autocommit";
+  public static final String DISABLE_SSL_VALIDATION = "disable_ssl_validation";
 
   /**
    * Create a PluginConfiguration from the properties contained in the
@@ -45,10 +47,10 @@ public class PluginConfigurationFactory {
    * @param filePath
    * @return
    */
-  public PluginConfigurations readConfigurations(String filePath) {
+  public ClientConfig readConfigurations(String filePath) {
     try {
       PropertiesConfiguration props = new PropertiesConfiguration(filePath);
-      PluginConfigurations config = new PluginConfigurations();
+      ClientConfig config = new ClientConfig();
       config.setApplicationUrl(props.getString(APP_URL));
       config.setFormat(Format.valueOf(
           props.getString(FILE_FORMAT, Format.JSON.name())));
@@ -57,14 +59,17 @@ public class PluginConfigurationFactory {
       config.setNavigatorUrl(props.getString(NAV_URL));
       config.setUsername(props.getString(USERNAME));
       config.setPassword(props.getString(PASSWORD));
+      config.setAutocommit(props.getBoolean(AUTOCOMMIT, false));
+      config.setDisableSSLValidation(props.getBoolean(DISABLE_SSL_VALIDATION,
+          false));
       return config;
     } catch (ConfigurationException e) {
       throw Throwables.propagate(e);
     }
   }
 
-  public PluginConfigurations fromConfigMap(Map<String, Object> props) {
-    PluginConfigurations config = new PluginConfigurations();
+  public ClientConfig fromConfigMap(Map<String, Object> props) {
+    ClientConfig config = new ClientConfig();
     config.setApplicationUrl(props.get(APP_URL).toString());
     Format format = props.containsKey(FILE_FORMAT) ?
         Format.valueOf(props.get(FILE_FORMAT).toString()) :
@@ -75,6 +80,10 @@ public class PluginConfigurationFactory {
     config.setNavigatorUrl(props.get(NAV_URL).toString());
     config.setUsername(props.get(USERNAME).toString());
     config.setPassword(props.get(PASSWORD).toString());
+    config.setAutocommit(props.containsKey(AUTOCOMMIT) ?
+        Boolean.valueOf(props.get(AUTOCOMMIT).toString()) : false);
+    config.setDisableSSLValidation(props.containsKey(DISABLE_SSL_VALIDATION) ?
+        Boolean.valueOf(props.get(DISABLE_SSL_VALIDATION).toString()) : false);
     return config;
   }
 }

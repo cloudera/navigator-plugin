@@ -42,18 +42,18 @@ public class NavigatorPlugin {
    * @return a new NavigatorPlugin instance
    */
   public static NavigatorPlugin fromConfigFile(String configFilePath) {
-    PluginConfigurations config = (new PluginConfigurationFactory())
+    ClientConfig config = (new ClientConfigFactory())
         .readConfigurations(configFilePath);
     return new NavigatorPlugin(config);
   }
 
   public static NavigatorPlugin fromConfigMap(Map<String, Object> configMap) {
-    PluginConfigurations config = (new PluginConfigurationFactory())
+    ClientConfig config = (new ClientConfigFactory())
         .fromConfigMap(configMap);
     return new NavigatorPlugin(config);
   }
 
-  private final PluginConfigurations config;
+  private final ClientConfig config;
   private final MetadataWriterFactory factory;
   private final NavApiCient client;
 
@@ -64,7 +64,7 @@ public class NavigatorPlugin {
    * @param config
    * @param factory
    */
-  public NavigatorPlugin(PluginConfigurations config,
+  public NavigatorPlugin(ClientConfig config,
                          MetadataWriterFactory factory) {
     Preconditions.checkArgument(!StringUtils.isEmpty(config.getNavigatorUrl()));
     Preconditions.checkArgument(config.getMetadataParentUri() != null);
@@ -80,7 +80,7 @@ public class NavigatorPlugin {
    *
    * @param config
    */
-  public NavigatorPlugin(PluginConfigurations config) {
+  public NavigatorPlugin(ClientConfig config) {
     this(config, new MetadataWriterFactory());
   }
 
@@ -138,7 +138,7 @@ public class NavigatorPlugin {
     return client;
   }
 
-  public PluginConfigurations getConfig() {
+  public ClientConfig getConfig() {
     return config;
   }
 

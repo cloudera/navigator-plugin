@@ -16,15 +16,7 @@
 
 package com.cloudera.nav.sdk.client.writer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-
-import org.apache.commons.httpclient.HttpStatus;
-
-import com.cloudera.nav.sdk.client.PluginConfigurations;
+import com.cloudera.nav.sdk.client.ClientConfig;
 import com.cloudera.nav.sdk.client.writer.serde.EntitySerializer;
 import com.cloudera.nav.sdk.client.writer.serde.RelationSerializer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -33,6 +25,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.base.Throwables;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+
+import org.apache.commons.httpclient.HttpStatus;
 
 /**
  * Write metadata in JSON format
@@ -43,7 +43,7 @@ public class JsonMetadataWriter extends MetadataWriter {
   private final ObjectMapper mapper;
   private ResultSet lastResult;
 
-  public JsonMetadataWriter(PluginConfigurations config,
+  public JsonMetadataWriter(ClientConfig config,
                             OutputStream stream,
                             HttpURLConnection conn) {
     super(config, stream);
@@ -78,7 +78,7 @@ public class JsonMetadataWriter extends MetadataWriter {
     try {
       // request is not sent until response code is requested
       if (conn.getResponseCode() >= HttpStatus.SC_BAD_REQUEST) {
-    	  
+
     	  // display error message
     	  BufferedReader br = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
     	  StringBuilder sb = new StringBuilder();
@@ -87,7 +87,7 @@ public class JsonMetadataWriter extends MetadataWriter {
     		  sb.append(responseBody);
     	  }
     	  responseBody = sb.toString();
-    	  
+
         throw new RuntimeException(String.format(
             "Error writing metadata (code %s): %s %s", conn.getResponseCode(),
             conn.getResponseMessage(), responseBody));

@@ -26,7 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 /**
  * A set of configuration options needed by the Navigator plugin
  */
-public class PluginConfigurations {
+public class ClientConfig {
 
   private String navigatorUrl;
   private URI metadataParentUri;
@@ -38,8 +38,9 @@ public class PluginConfigurations {
   private Format format;
   private Map<String, Object> props;
   private boolean autocommit;
+  private boolean disableSSLValidation;
 
-  public PluginConfigurations() {
+  public ClientConfig() {
     props = Maps.newHashMap();
   }
 
@@ -185,5 +186,16 @@ public class PluginConfigurations {
 
   public void setAutocommit(boolean autocommit) {
     this.autocommit = autocommit;
+  }
+
+  public void setDisableSSLValidation(boolean disableSSLValidation) {
+    this.disableSSLValidation = disableSSLValidation;
+  }
+
+  /**
+   * Whether to skip SSL certificate Validation altogether
+   */
+  public boolean isDisableSSLValidation() {
+    return disableSSLValidation;
   }
 }

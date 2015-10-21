@@ -27,8 +27,8 @@ public class PluginConfigurationFactoryTest {
   @Test
   public void testCreateFromFile() {
     URL url = this.getClass().getClassLoader().getResource("nav_plugin.conf");
-    PluginConfigurationFactory factory = new PluginConfigurationFactory();
-    PluginConfigurations config = factory.readConfigurations(url.getPath());
+    ClientConfigFactory factory = new ClientConfigFactory();
+    ClientConfig config = factory.readConfigurations(url.getPath());
 
     assertEquals(config.getApplicationUrl(), "http://external-app.com");
     assertEquals(config.getFormat(), Format.JSON);
