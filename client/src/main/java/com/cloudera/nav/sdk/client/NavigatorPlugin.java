@@ -81,7 +81,7 @@ public class NavigatorPlugin {
    * @param config
    */
   public NavigatorPlugin(ClientConfig config) {
-    this(config, new MetadataWriterFactory());
+    this(config, new MetadataWriterFactory(config));
   }
 
   /**
@@ -121,7 +121,7 @@ public class NavigatorPlugin {
    * @param entities
    */
   public ResultSet write(Collection<Entity> entities) {
-    MetadataWriter writer = factory.newWriter(config);
+    MetadataWriter writer = factory.newWriter();
     try {
       writer.write(entities);
       writer.flush();

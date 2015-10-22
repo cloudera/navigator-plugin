@@ -16,23 +16,24 @@
 
 package com.cloudera.nav.sdk.client;
 
+import static org.junit.Assert.*;
+
 import com.google.common.collect.Lists;
 
 import java.util.List;
 
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.*;
 
 /**
  * Test for helper functions in ClientUtils
  */
-public class ClientUtilsTest {
+public class QueryUtilsTest {
 
   @Test
   public void testSolrClause(){
     List<String> extractorRunIds = Lists.newArrayList("x##0", "x##1", "x##2");
-    String solrClause = ClientUtils.buildConjunctiveClause("extractorRunIds",
-                                                            extractorRunIds);
+    String solrClause = QueryUtils.buildConjunctiveClause("extractorRunIds",
+        extractorRunIds);
     String ans = "extractorRunIds:(x##0 OR x##1 OR x##2)";
     assertEquals(ans, solrClause);
   }
@@ -41,7 +42,7 @@ public class ClientUtilsTest {
   public void testSolrQuery(){
     String clause1 = "extractorRunIds:(x##0 OR x##1 OR x##2)";
     String clause2 = "identity:(foo OR bar OR baz)";
-    String fullQuery = ClientUtils.conjoinSolrQueries(clause1, clause2);
+    String fullQuery = QueryUtils.conjoinSolrQueries(clause1, clause2);
     String ans = "extractorRunIds:(x##0 OR x##1 OR x##2) " +
         "AND identity:(foo OR bar OR baz)";
     assertEquals(ans, fullQuery);

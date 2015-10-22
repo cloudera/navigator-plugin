@@ -31,13 +31,19 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -48,16 +54,21 @@ public class NavApiCient {
 
   private static final Logger LOG = LoggerFactory.getLogger(NavApiCient.class);
   private static final String SOURCE_QUERY = "type:SOURCE";
-  private static final String ALL_QUERY = "type:*";
 
   private final ClientConfig config;
   private final Cache<String, Source> sourceCacheByUrl;
   private final Cache<SourceType, Collection<Source>> sourceCacheByType;
+  private final boolean isSSL;
+  private final SSLContext sslContext;
+  private final HostnameVerifier hostnameVerifier;
 
   public NavApiCient(ClientConfig config) {
     this.config = config;
-    sourceCacheByUrl = CacheBuilder.newBuilder().build();
-    sourceCacheByType = CacheBuilder.newBuilder().build();
+    this.sourceCacheByUrl = CacheBuilder.newBuilder().build();
+    this.sourceCacheByType = CacheBuilder.newBuilder().build();
+    this.isSSL = SSLUtils.isSSL(config.getNavigatorUrl());
+    this.sslContext = isSSL ? SSLUtils.getSSLContext(config) : null;
+    this.hostnameVerifier = isSSL ? SSLUtils.getHostnameVerifier(config) : null;
   }
 
   /**
@@ -75,7 +86,7 @@ public class NavApiCient {
    * @return a collection of available sources
    */
   public Collection<Source> getAllSources() {
-    RestTemplate restTemplate = ClientUtils.newRestTemplate(config);
+    RestTemplate restTemplate = newRestTemplate();
     String url = getUrl();
     HttpHeaders headers = getAuthHeaders();
     HttpEntity<String> request = new HttpEntity<String>(headers);
@@ -125,12 +136,27 @@ public class NavApiCient {
   public ResultsBatch<Map<String, Object>> queryNav(String url,
                                                     MetadataQuery metadataQuery,
                                                     Class<? extends ResultsBatch<Map<String, Object>>> resultClass) {
-    RestTemplate restTemplate = ClientUtils.newRestTemplate(config);
+    RestTemplate restTemplate = newRestTemplate();
     HttpHeaders headers = getAuthHeaders();
     HttpEntity<MetadataQuery> request =
         new HttpEntity<MetadataQuery>(metadataQuery, headers);
     return restTemplate.exchange(url, HttpMethod.POST, request,
         resultClass).getBody();
+  }
+
+  private RestTemplate newRestTemplate() {
+    if (isSSL) {
+      CloseableHttpClient httpClient = HttpClients.custom()
+          .setSSLContext(sslContext)
+          .setSSLHostnameVerifier(hostnameVerifier)
+          .build();
+      HttpComponentsClientHttpRequestFactory requestFactory =
+          new HttpComponentsClientHttpRequestFactory();
+      requestFactory.setHttpClient(httpClient);
+      return new RestTemplate(requestFactory);
+    } else {
+      return new RestTemplate();
+    }
   }
 
   /**
@@ -206,13 +232,13 @@ public class NavApiCient {
   private String getUrl() {
     // form the url string to request all entities with type equal to SOURCE
     String baseNavigatorUrl = config.getNavigatorUrl();
-    String entitiesUrl = ClientUtils.joinUrlPath(baseNavigatorUrl, "entities");
+    String entitiesUrl = joinUrlPath(baseNavigatorUrl, "entities");
     return String.format("%s?query=%s", entitiesUrl, SOURCE_QUERY);
   }
 
   private String getUrl(String type) {
     String baseNavigatorUrl = config.getNavigatorUrl();
-    String typeUrl = ClientUtils.joinUrlPath(baseNavigatorUrl, type);
+    String typeUrl = joinUrlPath(baseNavigatorUrl, type);
     return typeUrl + "/paging";
   }
 
@@ -240,5 +266,9 @@ public class NavApiCient {
         throw Throwables.propagate(e);
       }
     }
+  }
+
+  private static String joinUrlPath(String base, String component) {
+    return base + (base.endsWith("/") ? "" : "/") + component;
   }
 }

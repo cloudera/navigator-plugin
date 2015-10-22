@@ -134,9 +134,9 @@ public class MetadataResultIterator implements Iterator<Map<String, Object>> {
     // partition of extractorRunIds
     cursorMark="*";
     List<String> extractorRunIdBatch = partitionRunIdIterator.next();
-    String extractorString = ClientUtils.buildConjunctiveClause(
+    String extractorString = QueryUtils.buildConjunctiveClause(
         "extractorRunId", extractorRunIdBatch);
-    nextQuery = ClientUtils.conjoinSolrQueries(userQuery, extractorString);
+    nextQuery = QueryUtils.conjoinSolrQueries(userQuery, extractorString);
   }
 
   /**
