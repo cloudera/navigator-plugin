@@ -39,6 +39,8 @@ public class ClientConfigFactory {
   public static final String PASSWORD = "password";
   public static final String AUTOCOMMIT = "autocommit";
   public static final String DISABLE_SSL_VALIDATION = "disable_ssl_validation";
+  public static final String SSL_KEYSTORE_LOCATION = "ssl_truststore_location";
+  public static final String SSL_KEYSTORE_PASSWORD = "ssl_truststore_password";
 
   /**
    * Create a PluginConfiguration from the properties contained in the
@@ -62,6 +64,10 @@ public class ClientConfigFactory {
       config.setAutocommit(props.getBoolean(AUTOCOMMIT, false));
       config.setDisableSSLValidation(props.getBoolean(DISABLE_SSL_VALIDATION,
           false));
+      config.setSSLTrustStoreLocation(props.getString(SSL_KEYSTORE_LOCATION,
+          null));
+      config.setSSLTrustStorePassword(props.getString(SSL_KEYSTORE_PASSWORD,
+          null));
       return config;
     } catch (ConfigurationException e) {
       throw Throwables.propagate(e);
@@ -84,6 +90,10 @@ public class ClientConfigFactory {
         Boolean.valueOf(props.get(AUTOCOMMIT).toString()) : false);
     config.setDisableSSLValidation(props.containsKey(DISABLE_SSL_VALIDATION) ?
         Boolean.valueOf(props.get(DISABLE_SSL_VALIDATION).toString()) : false);
+    config.setSSLTrustStoreLocation(props.containsKey(SSL_KEYSTORE_LOCATION) ?
+        props.get(SSL_KEYSTORE_LOCATION).toString() : null);
+    config.setSSLTrustStorePassword(props.containsKey(SSL_KEYSTORE_PASSWORD) ?
+        props.get(SSL_KEYSTORE_PASSWORD).toString() : null);
     return config;
   }
 }

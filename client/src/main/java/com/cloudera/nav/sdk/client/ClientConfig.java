@@ -15,11 +15,11 @@
  */
 package com.cloudera.nav.sdk.client;
 
-import com.google.common.collect.Maps;
-
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.TrustManager;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -36,13 +36,13 @@ public class ClientConfig {
   private String password;
   private Configuration hadoopConf;
   private Format format;
-  private Map<String, Object> props;
   private boolean autocommit;
   private boolean disableSSLValidation;
-
-  public ClientConfig() {
-    props = Maps.newHashMap();
-  }
+  private TrustManager overrideTrustManager;
+  private HostnameVerifier overrideHostnameVerifier;
+  private String sslTrustStoreType;
+  private String sslTrustStoreLocation;
+  private String sslTrustStorePassword;
 
   /**
    * @return Location of the Navigator API server
@@ -168,18 +168,6 @@ public class ClientConfig {
     this.format = format;
   }
 
-  public void setProperty(String key, Object value) {
-    props.put(key, value);
-  }
-
-  public Map<String, Object> getProperties() {
-    return props;
-  }
-
-  public Object getProperty(String key) {
-    return props.get(key);
-  }
-
   public boolean isAutocommit() {
     return autocommit;
   }
@@ -197,5 +185,45 @@ public class ClientConfig {
    */
   public boolean isDisableSSLValidation() {
     return disableSSLValidation;
+  }
+
+  public TrustManager getOverrideTrustManager() {
+    return overrideTrustManager;
+  }
+
+  public void setOverrideTrustManager(TrustManager overrideTrustManager) {
+    this.overrideTrustManager = overrideTrustManager;
+  }
+
+  public HostnameVerifier getOverrideHostnameVerifier() {
+    return overrideHostnameVerifier;
+  }
+
+  public void setOverrideHostnameVerifier(HostnameVerifier overrideHostnameVerifier) {
+    this.overrideHostnameVerifier = overrideHostnameVerifier;
+  }
+
+  public String getSSLTrustStoreLocation() {
+    return sslTrustStoreLocation;
+  }
+
+  public void setSSLTrustStoreLocation(String sslTrustStoreLocation) {
+    this.sslTrustStoreLocation = sslTrustStoreLocation;
+  }
+
+  public String getSSLTrustStorePassword() {
+    return sslTrustStorePassword;
+  }
+
+  public void setSSLTrustStorePassword(String sslTrustStorePassword) {
+    this.sslTrustStorePassword = sslTrustStorePassword;
+  }
+
+  public String getSslTrustStoreType() {
+    return sslTrustStoreType;
+  }
+
+  public void setSslTrustStoreType(String sslTrustStoreType) {
+    this.sslTrustStoreType = sslTrustStoreType;
   }
 }

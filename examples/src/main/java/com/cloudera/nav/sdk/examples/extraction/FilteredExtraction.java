@@ -15,11 +15,11 @@
  */
 package com.cloudera.nav.sdk.examples.extraction;
 
-import com.cloudera.nav.sdk.client.ClientUtils;
 import com.cloudera.nav.sdk.client.MetadataExtractor;
 import com.cloudera.nav.sdk.client.MetadataResultSet;
 import com.cloudera.nav.sdk.client.NavApiCient;
 import com.cloudera.nav.sdk.client.NavigatorPlugin;
+import com.cloudera.nav.sdk.client.QueryUtils;
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.google.common.base.Preconditions;
@@ -142,7 +142,7 @@ public class FilteredExtraction {
     //Alternative with buildQuery
     List<String> sourceTypes = Lists.newArrayList("MAPREDUCE", "YARN");
     List<String> types = Lists.newArrayList("OPERATION EXECUTION");
-    String entityQuery = ClientUtils.buildQuery(sourceTypes, types);
+    String entityQuery = QueryUtils.buildQuery(sourceTypes, types);
     Iterable<Map<String, Object>> yarnOpEntities2 = extractor.extractMetadata(
         marker, null, entityQuery, "").getEntities();
     getFirstResult(yarnOpEntities2);

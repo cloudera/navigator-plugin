@@ -46,8 +46,7 @@ public class NavigatorPluginTest {
   public void setUp() {
     mockWriter = mock(MetadataWriter.class);
     mockFactory = mock(MetadataWriterFactory.class);
-    doReturn(mockWriter).when(mockFactory).newWriter(
-        any(ClientConfig.class));
+    doReturn(mockWriter).when(mockFactory).newWriter();
   }
 
   @Test
