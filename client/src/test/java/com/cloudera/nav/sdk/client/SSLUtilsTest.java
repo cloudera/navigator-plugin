@@ -20,8 +20,12 @@ import static org.junit.Assert.*;
 
 import com.google.common.collect.Maps;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -29,7 +33,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.junit.*;
@@ -39,15 +42,12 @@ import org.mockito.runners.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SSLUtilsTest {
 
-  private static final String BASEDIR =
-      System.getProperty("test.build.dir", "target/test-dir") + "/" +
-          SSLUtilsTest.class.getSimpleName();
-  private static Map<String, X509Certificate> certs;
+  private static Map<String, Certificate> certs;
 
   private ClientConfig config;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     Map<String, Object> confMap = Maps.newHashMap();
     confMap.put(ClientConfigFactory.APP_URL, "localhost");
     confMap.put(ClientConfigFactory.METADATA_URI, "localhost");
@@ -56,19 +56,20 @@ public class SSLUtilsTest {
     confMap.put(ClientConfigFactory.USERNAME, "user");
     confMap.put(ClientConfigFactory.PASSWORD, "pass");
     config = (new ClientConfigFactory()).fromConfigMap(confMap);
-  }
 
-  @BeforeClass
-  public static void setUpClass() throws Exception {
-    File base = new File(BASEDIR);
-    FileUtils.deleteDirectory(base);
-    base.mkdirs();
-    certs = SSLTestUtils.setupSSLConfig(BASEDIR);
-  }
-
-  @AfterClass
-  public static void tearDownClass() throws Exception {
-    SSLTestUtils.cleanupSSLConfig(BASEDIR);
+    KeyStore keyStore = KeyStore.getInstance("jks");
+    ClassLoader classLoader = getClass().getClassLoader();
+    String keyStoreLocation = classLoader.getResource("client.jks").getFile();
+    try (InputStream is = new FileInputStream(keyStoreLocation)) {
+      keyStore.load(is, "clientP".toCharArray());
+    }
+    certs = Maps.newHashMap();
+    Enumeration<String> aliasesEn = keyStore.aliases();
+    String alias;
+    while(aliasesEn.hasMoreElements()) {
+      alias = aliasesEn.nextElement();
+      certs.put(alias, keyStore.getCertificate(alias));
+    }
   }
 
   @Test
@@ -97,7 +98,9 @@ public class SSLUtilsTest {
   @Test
   public void testGetTrustManager() throws Exception {
     // From config
-    config.setSSLTrustStoreLocation(BASEDIR + "/trust.jks");
+    ClassLoader classLoader = getClass().getClassLoader();
+    config.setSSLTrustStoreLocation(classLoader.getResource("trust.jks")
+        .getFile());
     config.setSSLTrustStorePassword("trustP");
     TrustManager trustManager = SSLUtils.getTrustManager(config);
     assertTrue(trustManager instanceof X509TrustManager);
