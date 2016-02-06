@@ -159,6 +159,10 @@ public class NavApiCient {
     }
   }
 
+  public ClientConfig getConfig() {
+    return config;
+  }
+
   /**
    * Get the Source corresponding to the Hadoop service Url from Navigator.nvmd
    * A NoSuchElementException is thrown if the url does not correspond to
