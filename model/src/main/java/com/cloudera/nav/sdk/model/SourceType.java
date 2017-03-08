@@ -19,5 +19,5 @@ package com.cloudera.nav.sdk.model;
  * Constant string names for default Source types
  */
 public enum SourceType {
-  NONE, MAPREDUCE, YARN, HDFS, HIVE, PIG, IMPALA, OOZIE, SDK, SQOOP, SPARK
+  NONE, MAPREDUCE, YARN, HDFS, HIVE, PIG, IMPALA, OOZIE, SDK, SQOOP, SPARK, S3
 }
