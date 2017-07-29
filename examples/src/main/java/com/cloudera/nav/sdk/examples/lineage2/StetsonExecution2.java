@@ -17,6 +17,7 @@
 package com.cloudera.nav.sdk.examples.lineage2;
 
 import com.cloudera.nav.sdk.examples.lineage.StetsonExecution;
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.annotations.MClass;
 import com.cloudera.nav.sdk.model.annotations.MRelation;
 import com.cloudera.nav.sdk.model.relations.RelationRole;
@@ -88,25 +89,26 @@ public class StetsonExecution2 extends
    * Add a new input dataset backed by the given HDFS directory
    * Not threadsafe
    * @param name
-   * @param hdfsId
+   * @param path
+   * @param sourceId
    */
-  public void addInput(String name, String hdfsId) {
+  public void addInput(String name, String path, String sourceId) {
     if (inputs == null) {
       inputs = Lists.newArrayList();
     }
-    inputs.add(new StetsonDataset(name, getNamespace(), hdfsId));
+    inputs.add(new StetsonDataset(name, getNamespace(), path, sourceId));
   }
 
   /**
    * Add a new output dataset backed by the given HDFS directory
    * Not threadsafe
    * @param name
-   * @param hdfsId
+   * @param path
    */
-  public void addOutput(String name, String hdfsId) {
+  public void addOutput(String name, String path, String sourceId) {
     if (outputs == null) {
       outputs = Lists.newArrayList();
     }
-    outputs.add(new StetsonDataset(name, getNamespace(), hdfsId));
+    outputs.add(new StetsonDataset(name, getNamespace(), path, sourceId));
   }
 }

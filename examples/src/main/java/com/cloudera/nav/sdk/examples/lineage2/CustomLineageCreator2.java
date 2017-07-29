@@ -18,9 +18,11 @@ package com.cloudera.nav.sdk.examples.lineage2;
 
 import com.cloudera.nav.sdk.client.NavApiCient;
 import com.cloudera.nav.sdk.examples.lineage.CustomLineageCreator;
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.MD5IdGenerator;
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.SourceType;
+import com.cloudera.nav.sdk.model.entities.Entity;
 
 import org.joda.time.Instant;
 
@@ -52,10 +54,10 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
    */
   public static void main(String[] args) {
     CustomLineageCreator2 lineageCreator = new CustomLineageCreator2(args[0]);
-    lineageCreator.setPigOperationId(args[1]);
-    lineageCreator.setPigExecutionId(args[2]);
-    lineageCreator.setInputPath(args[3]);
-    lineageCreator.setOutputPath(args[4]);
+    //lineageCreator.setPigOperationId("bfe554798ad45fd3a169d874768fe2e1");
+    //lineageCreator.setPigExecutionId("6b7f61fdce562d2d7825e9eb9dd6d683");
+    lineageCreator.setInputPath("/hbase");
+    lineageCreator.setOutputPath("/solr");
     lineageCreator.run();
   }
 
@@ -67,9 +69,9 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
   }
 
   @Override
-  protected StetsonExecution2 createExecution() {
+  protected StetsonExecution2 createExecution(Entity attrs) {
     StetsonExecution2 exec = new StetsonExecution2(plugin.getNamespace());
-    exec.setPigExecution(getPigExecutionId());
+    exec.setPigExecution(attrs);
     exec.setName("Stetson Execution");
     exec.setDescription("I am an \n F \n B \n I \n agent.");
     exec.setLink("http://hasthelargehadroncolliderdestroyedtheworldyet.com/");
@@ -79,8 +81,13 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
     // Extend the previous stetson example by linking it to inputs and outputs
     String inputName = "StetsonInput"; // Stetson's name for the input dataset
     String outputName = "StetsonOutput"; // Stetson's name for the output data
-    exec.addInput(inputName, getHdfsEntityId(getInputPath()));
-    exec.addOutput(outputName, getHdfsEntityId(getOutputPath()));
+
+    NavApiCient client = plugin.getClient();
+    Source hdfs = client.getOnlySource(SourceType.HDFS);
+
+    exec.addInput(inputName, getInputPath(), hdfs.getIdentity());
+    exec.addOutput(outputName, getOutputPath(), hdfs.getIdentity());
+
     return exec;
   }
 
@@ -98,11 +105,5 @@ public class CustomLineageCreator2 extends CustomLineageCreator {
 
   public void setOutputPath(String outputPath) {
     this.outputPath = outputPath;
-  }
-
-  private String getHdfsEntityId(String path) {
-    NavApiCient client = plugin.getClient();
-    Source hdfs = client.getOnlySource(SourceType.HDFS);
-    return MD5IdGenerator.generateIdentity(hdfs.getIdentity(), path);
   }
 }

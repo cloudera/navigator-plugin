@@ -65,6 +65,7 @@ public class MRelationEntry {
     RelationType type = getRelationTypeFromRole(roleOfOther);
     RelationFactory factory = new RelationFactory();
     Collection<? extends Entity> otherEndpoints = getConnectedEntities(entity);
+
     return factory.createRelation(type, entity, otherEndpoints, roleOfOther,
         namespace);
   }

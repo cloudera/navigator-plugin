@@ -15,13 +15,8 @@
  */
 package com.cloudera.nav.sdk.model.entities;
 
-import com.cloudera.nav.sdk.model.HdfsIdGenerator;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MClass;
-import com.cloudera.nav.sdk.model.annotations.MProperty;
-import com.google.common.base.Preconditions;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * A concrete entity that represents HDFS directories or files. Note that the
@@ -29,9 +24,6 @@ import org.apache.commons.lang.StringUtils;
  */
 @MClass(model="fselement", validTypes = {EntityType.DIRECTORY, EntityType.FILE})
 public class HdfsEntity extends Entity {
-
-  @MProperty
-  private String fileSystemPath;
 
   public HdfsEntity() {
     setSourceType(SourceType.HDFS);
@@ -42,37 +34,11 @@ public class HdfsEntity extends Entity {
     setSourceId(sourceId);
     setFileSystemPath(fileSystemPath);
     setEntityType(type);
-    setIdentity(generateId());
+    setIsIdGenerated(false);
   }
 
-  /**
-   * An HDFS file/directory can be uniquely identified by the path and
-   * the Source id
-   *
-   * @return
-   */
-  @Override
-  public String generateId() {
-    return HdfsIdGenerator.generateHdfsEntityId(getSourceId(),
-        getFileSystemPath());
-  }
-
-  /**
-   * @return the full path for this file or directory
-   */
-  public String getFileSystemPath() {
-    return fileSystemPath;
-  }
-
-  /**
-   * Set the full path of this file or directory
-   * @param fileSystemPath
-   */
-  public void setFileSystemPath(String fileSystemPath) {
-    Preconditions.checkArgument(StringUtils.isNotEmpty(fileSystemPath));
-    if (fileSystemPath.endsWith("/")) {
-      fileSystemPath = fileSystemPath.substring(0, fileSystemPath.length() - 1);
-    }
-    this.fileSystemPath = fileSystemPath;
+  public HdfsEntity(String id) {
+    this();
+    setIdentity(id);
   }
 }

@@ -51,8 +51,7 @@ public class FireCircleSchemaCreator {
         .iterator().next();
 
     // specify the HDFS directory that contains the data
-    String path = args[1];
-    HdfsEntity container = new HdfsEntity(path, EntityType.DIRECTORY,
+    HdfsEntity container = new HdfsEntity(args[1], EntityType.DIRECTORY,
         fs.getIdentity());
 
     FireCircleDataset dataset = new FireCircleDataset();

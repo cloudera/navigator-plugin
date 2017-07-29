@@ -16,8 +16,10 @@
 
 package com.cloudera.nav.sdk.model.entities;
 
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MClass;
+import com.cloudera.nav.sdk.model.annotations.MProperty;
 
 /**
  * A proxy for an Entity to be used as a Relation end-point.
@@ -28,16 +30,33 @@ import com.cloudera.nav.sdk.model.annotations.MClass;
 @MClass(model="proxy")
 public class EndPointProxy extends Entity {
 
-  public EndPointProxy(String id, SourceType sourceType, EntityType type) {
+  @MProperty(attribute = "entityAttrs")
+  private IdAttrs idAttrs;
+
+  public EndPointProxy(SourceType sourceType,
+                       EntityType type, IdAttrs attrs) {
+    setSourceType(sourceType);
+    setEntityType(type);
+    setIdAttrs(attrs);
+  }
+
+  public EndPointProxy(String id, SourceType sourceType,
+                       EntityType type) {
     setIdentity(id);
     setSourceType(sourceType);
     setEntityType(type);
   }
-
   /**
    * Throws UnsupportedOperationException.
    * The entity id for a proxy must be set explicitly
    */
+
+  public void setIdAttrs(IdAttrs idAttrs) {
+    this.idAttrs = idAttrs;
+  }
+
+  public IdAttrs getIdAttrs() { return idAttrs; }
+
   @Override
   public String generateId() {
     throw new UnsupportedOperationException();

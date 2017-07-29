@@ -15,8 +15,10 @@
  */
 package com.cloudera.nav.sdk.model.entities;
 
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Sets;
 
 import java.util.Collection;
@@ -34,15 +36,17 @@ import org.joda.time.Instant;
  * Hadoop component Entities will inherit from Entity while custom application
  * entities should inherit from CustomEntity
  */
-public abstract class Entity {
+public class Entity extends IdAttrs {
 
   public static final CharSequence ID_SEPARATOR = "##";
 
   // required properties
-  @MProperty(required=true)
+  @MProperty
   private String identity;
   @MProperty(required=true)
   private SourceType sourceType;
+
+  @JsonProperty("type")
   @MProperty(required=true, attribute = "type")
   private EntityType entityType;
 
@@ -71,8 +75,11 @@ public abstract class Entity {
   @MProperty
   private String parentPath;
 
+  private Boolean isIdGenerated = true;
 
-  public abstract String generateId();
+  public String generateId() {
+    return identity;
+  }
 
   /**
    * @return id for this custom entity
@@ -343,5 +350,11 @@ public abstract class Entity {
   @Override
   public int hashCode() {
     return identity.hashCode();
+  }
+
+  public Boolean getIsIdGenerated() { return isIdGenerated; }
+
+  public void setIsIdGenerated(Boolean isIdGenerated) {
+    this.isIdGenerated = isIdGenerated;
   }
 }

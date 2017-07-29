@@ -18,6 +18,7 @@ package com.cloudera.nav.sdk.client;
 import com.cloudera.nav.sdk.model.MetadataModel;
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.SourceType;
+import com.cloudera.nav.sdk.model.entities.Entity;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -116,6 +117,19 @@ public class NavApiCient {
     }
     return sources;
   }
+
+  public String getEntityId(Entity entity) {
+    String url = "http://localhost:7187/api/v11/entities/getEntityId";
+    entity.setIdentity("Hello");
+    String identity = sendRequest(url, HttpMethod.POST, String.class, entity);
+    return identity;
+  }
+
+  /*
+
+  public String getHDFSIdentity() {
+
+  }*/
 
   /**
    * Constructs relation API call from query, and cursorMark.Returns a batch of
@@ -226,6 +240,7 @@ public class NavApiCient {
     String base64Creds = new String(base64CredsBytes);
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", "Basic " + base64Creds);
+    //headers.add("Content-Type", "application/json");
     return headers;
   }
 

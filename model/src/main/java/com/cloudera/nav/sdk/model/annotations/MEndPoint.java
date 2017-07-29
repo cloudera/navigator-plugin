@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.cloudera.nav.sdk.model.annotations;
 
-package com.cloudera.nav.sdk.model;
+import com.cloudera.nav.sdk.model.entities.EntityType;
 
-import com.google.common.base.Preconditions;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.apache.commons.lang.StringUtils;
-
-public class HdfsIdGenerator {
-
-  public static String generateHdfsEntityId(String sourceId,
-                                            String fileSystemPath) {
-    Preconditions.checkArgument(!StringUtils.isEmpty(sourceId) &&
-        !StringUtils.isEmpty(fileSystemPath), "SourceId and fileSystemPath " +
-        "must be supplied to generate HDFS entity identity");
-    return MD5IdGenerator.generateIdentity(sourceId, fileSystemPath);
-  }
+/**
+ * Identifies an end point
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface MEndPoint {
 }

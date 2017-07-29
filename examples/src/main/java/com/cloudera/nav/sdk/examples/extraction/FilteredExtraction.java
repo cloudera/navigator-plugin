@@ -61,8 +61,8 @@ public class FilteredExtraction {
     MetadataExtractor extractor = new MetadataExtractor(client, null);
 
     // Run filtered examples
-    getHDFSEntities(client, extractor, marker);
-    getHive(extractor, marker, "city_id");
+    //getHDFSEntities(client, extractor, marker);
+    //getHive(extractor, marker, "city_id");
     getHiveOperations(extractor, marker);
     String nextMarker = getMRandYarn(extractor, marker);
 

@@ -16,27 +16,28 @@
 
 package com.cloudera.nav.sdk.model;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import com.cloudera.nav.sdk.model.annotations.MClass;
-import com.cloudera.nav.sdk.model.entities.EndPointProxy;
 import com.cloudera.nav.sdk.model.entities.Entity;
 import com.cloudera.nav.sdk.model.entities.HdfsEntity;
 import com.cloudera.nav.sdk.model.entities.HiveColumn;
 import com.cloudera.nav.sdk.model.entities.HiveTable;
+import com.cloudera.nav.sdk.model.entities.PigOperation;
+import com.cloudera.nav.sdk.model.entities.PigOperationExecution;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class MClassTest {
 
   @Test
   public void testDefaultMClassEntities() {
     Collection<Class<? extends Entity>> classes = ImmutableList.of(
-        EndPointProxy.class, HdfsEntity.class, HiveColumn.class,
-        HiveTable.class);
+        PigOperation.class, HdfsEntity.class, HiveColumn.class,
+        HiveTable.class, PigOperationExecution.class);
     for (Class<? extends Entity> aClass : classes) {
       assertTrue(aClass.isAnnotationPresent(MClass.class));
     }

@@ -16,14 +16,17 @@
 
 package com.cloudera.nav.sdk.examples.lineage2;
 
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.CustomIdGenerator;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MClass;
 import com.cloudera.nav.sdk.model.annotations.MRelation;
-import com.cloudera.nav.sdk.model.entities.EndPointProxy;
 import com.cloudera.nav.sdk.model.entities.Entity;
 import com.cloudera.nav.sdk.model.entities.EntityType;
+import com.cloudera.nav.sdk.model.entities.HdfsEntity;
 import com.cloudera.nav.sdk.model.relations.RelationRole;
+
+import java.util.UUID;
 
 /**
  * This is a custom logical dataset that is physically backed by an
@@ -38,12 +41,13 @@ public class StetsonDataset extends Entity {
   /**
    * @param name Stetson name for the dataset
    * @param namespace
-   * @param hdfsEntityId identity of the underlying HDFS directory
+   * @param path identity of the underlying HDFS directory
    */
-  public StetsonDataset(String name, String namespace, String hdfsEntityId) {
+  public StetsonDataset(String name, String namespace, String path,
+                        String sourceId) {
     setName(name);
     setNamespace(namespace);
-    setHdfsEntity(hdfsEntityId);
+    setHdfsEntity(sourceId, path);
   }
 
   @Override
@@ -63,11 +67,11 @@ public class StetsonDataset extends Entity {
   @Override
   public String generateId() {
     return CustomIdGenerator.generateIdentity(getName(), getNamespace(),
-        getHdfsEntity().getIdentity());
+        UUID.randomUUID().toString());
   }
 
-  public void setHdfsEntity(String hdfsEntityId) {
-    hdfsEntity = new EndPointProxy(hdfsEntityId, SourceType.HDFS,
-        EntityType.DIRECTORY);
+  public void setHdfsEntity(String sourceId,
+                            String path) {
+    hdfsEntity = new HdfsEntity(path, EntityType.DIRECTORY, sourceId);
   }
 }

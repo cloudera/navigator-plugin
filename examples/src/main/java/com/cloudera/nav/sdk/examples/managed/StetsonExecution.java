@@ -17,16 +17,17 @@
 package com.cloudera.nav.sdk.examples.managed;
 
 import com.cloudera.nav.sdk.model.CustomIdGenerator;
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MClass;
 import com.cloudera.nav.sdk.model.annotations.MProperty;
 import com.cloudera.nav.sdk.model.annotations.MRelation;
 import com.cloudera.nav.sdk.model.custom.CustomPropertyType;
-import com.cloudera.nav.sdk.model.entities.EndPointProxy;
 import com.cloudera.nav.sdk.model.entities.Entity;
 import com.cloudera.nav.sdk.model.entities.EntityType;
 import com.cloudera.nav.sdk.model.relations.RelationRole;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.Instant;
@@ -77,9 +78,14 @@ public class StetsonExecution extends Entity {
    */
   @Override
   public String generateId() {
-    return CustomIdGenerator.generateIdentity(getNamespace(),
-        getTemplate().getIdentity(),
-        getPigExecution().getIdentity());
+    if (!Strings.isNullOrEmpty(getPigExecution().getIdentity())) {
+      return CustomIdGenerator.generateIdentity(getNamespace(),
+          getTemplate().getIdentity(),
+          getPigExecution().getIdentity());
+    } else {
+      return CustomIdGenerator.generateIdentity(getNamespace(),
+          getTemplate().getIdentity());
+    }
   }
 
   @Override
@@ -131,9 +137,8 @@ public class StetsonExecution extends Entity {
     this.template = template;
   }
 
-  public void setPigExecution(String pigExecutionId) {
-    this.pigExecution = new EndPointProxy(pigExecutionId, SourceType.PIG,
-        EntityType.OPERATION_EXECUTION);
+  public void setPigExecution(Entity pigExecution) {
+    this.pigExecution = pigExecution;
   }
 
   public void setStarted(Instant started) {

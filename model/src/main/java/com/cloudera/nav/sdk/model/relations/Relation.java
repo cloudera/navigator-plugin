@@ -16,6 +16,7 @@
 package com.cloudera.nav.sdk.model.relations;
 
 
+import com.cloudera.nav.sdk.model.IdAttrs;
 import com.cloudera.nav.sdk.model.SourceType;
 import com.cloudera.nav.sdk.model.annotations.MProperty;
 import com.cloudera.nav.sdk.model.entities.Entity;
@@ -25,6 +26,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -43,6 +45,7 @@ public abstract class Relation {
     private String namespace;
     private String identity;
     private Collection<String> ep1Ids;
+    private Collection<IdAttrs> ep1Attributes;
     private EntityType ep1Type;
     private SourceType ep1SourceType;
     private String ep1SourceId;
@@ -50,6 +53,7 @@ public abstract class Relation {
     private EntityType ep2Type;
     private SourceType ep2SourceType;
     private String ep2SourceId;
+    private Collection<IdAttrs> ep2Attributes;
     private boolean userSpecified;
     private RelationIdGenerator idGenerator;
 
@@ -58,6 +62,16 @@ public abstract class Relation {
     }
 
     protected abstract T self();
+
+    public T ep1Attributes(Collection<IdAttrs> ep1Attributes) {
+      this.ep1Attributes = ep1Attributes;
+      return self();
+    }
+
+    public T ep2Attributes(Collection<IdAttrs> ep2Attributes) {
+      this.ep2Attributes = ep2Attributes;
+      return self();
+    }
 
     public T namespace(String namespace) {
       this.namespace = namespace;
@@ -154,7 +168,10 @@ public abstract class Relation {
       Collection<String> ids = Lists.newArrayList();
       Entity proto = null;
       for (Entity en : entities) {
-        ids.add(en.getIdentity());
+        if (en.getIdentity() != null) {
+          ids.add(en.getIdentity());
+        }
+
         if (proto == null) {
           proto = en;
         } else {
@@ -178,11 +195,11 @@ public abstract class Relation {
   private String identity;
   @MProperty(required=true)
   private RelationType type;
-  @MProperty(required=true, attribute="endpoint1Ids")
+  @MProperty(attribute="endpoint1Ids")
   private Collection<String> ep1Ids;
   @MProperty(required=true, attribute="endpoint1SourceType")
   private SourceType ep1SourceType;
-  @MProperty(required=true, attribute="endpoint2Ids")
+  @MProperty(attribute="endpoint2Ids")
   private Collection<String> ep2Ids;
   @MProperty(required=true, attribute="endpoint2SourceType")
   private SourceType ep2SourceType;
@@ -197,8 +214,15 @@ public abstract class Relation {
   @MProperty
   private boolean userSpecified;
 
+  @MProperty
+  private Collection<IdAttrs> ep1Attributes;
+
+  @MProperty
+  private Collection<IdAttrs> ep2Attributes;
+
+
   protected Relation(Builder<?> builder) {
-    Preconditions.checkState(builder.identity != null ||
+    /*Preconditions.checkState(builder.identity != null ||
         builder.idGenerator != null);
     if (builder.identity != null) {
       this.identity = builder.identity;
@@ -207,7 +231,8 @@ public abstract class Relation {
           builder.ep1Ids, builder.ep1SourceType,
           builder.ep2Ids, builder.ep2SourceType, builder.type,
           builder.namespace);
-    }
+    }*/
+    this.identity = UUID.randomUUID().toString();
     this.type = builder.type;
     this.namespace = builder.namespace;
     this.ep1Ids = builder.ep1Ids;
@@ -219,6 +244,8 @@ public abstract class Relation {
     this.ep2SourceType = builder.ep2SourceType;
     this.ep2SourceId = builder.ep2SourceId;
     this.userSpecified = builder.userSpecified;
+    this.ep1Attributes = builder.ep1Attributes;
+    this.ep2Attributes = builder.ep2Attributes;
     validator.validateRequiredMProperties(this);
   }
 
@@ -284,4 +311,8 @@ public abstract class Relation {
   public boolean isUserSpecified() {
     return userSpecified;
   }
+
+  public Collection<IdAttrs> getEp1Attributes() { return ep1Attributes; }
+
+  public Collection<IdAttrs> getEp2Attributes() { return ep2Attributes; }
 }
