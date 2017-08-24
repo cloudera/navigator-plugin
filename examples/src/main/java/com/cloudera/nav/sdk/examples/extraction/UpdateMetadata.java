@@ -7,11 +7,15 @@ import com.cloudera.nav.sdk.client.EntityUpdateAttrs;
 import com.cloudera.nav.sdk.client.NavApiCient;
 import com.cloudera.nav.sdk.model.Source;
 import com.cloudera.nav.sdk.model.entities.EntityType;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.opencsv.CSVReader;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
+import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +40,7 @@ public class UpdateMetadata {
   private static Map<Integer, String> customMetadataPropNames = Maps.newHashMap();
   private static Map<Integer, String> managedMetadataNameSpaces = Maps.newHashMap();
   private static Map<Integer, String> managedMetadataPropNames = Maps.newHashMap();
+  private static Map<Integer, String> managedMetadataPropTypes = Maps.newHashMap();
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws IOException {
@@ -52,7 +57,7 @@ public class UpdateMetadata {
     Collection<Source> sources = client.getAllSources();
     Map<String, Source> sourceMap = Maps.newHashMap();
     for(Source source : sources) {
-      sourceMap.put(source.getName().toUpperCase(), source);
+      sourceMap.put(source.getSourceType().toString().toUpperCase(), source);
     }
 
     CSVReader reader =  new CSVReader(new FileReader(args[1]));
@@ -78,9 +83,21 @@ public class UpdateMetadata {
       }
 
       EntityUpdateAttrs updateAttrs = new EntityUpdateAttrs();
-      updateAttrs.setName(getNextCol(line, index++));
-      updateAttrs.setDescription(getNextCol(line, index++));
-      updateAttrs.setTags(parseTags(getNextCol(line, index++)));
+
+      String name = getNextCol(line, index++);
+      if(!Strings.isNullOrEmpty(name)) {
+        updateAttrs.setName(name);
+      }
+
+      String description = getNextCol(line, index++);
+      if(!Strings.isNullOrEmpty(description)) {
+        updateAttrs.setDescription(description);
+      }
+
+      String tags = getNextCol(line, index++);
+      if(!Strings.isNullOrEmpty(tags)) {
+        updateAttrs.setTags(parseTags(tags));
+      }
 
       updateCustomProperties(updateAttrs, line);
       updateManagedProperties(updateAttrs, line);
@@ -114,7 +131,6 @@ public class UpdateMetadata {
       customMetadataPropNames.put(i, header.substring(3));
     }
 
-    Map<String, Map<String, String>> properties = Maps.newHashMap();
     for(; i < line.length; i++) {
       String header = line[i].trim();
       if (!header.startsWith("MM.")) {
@@ -124,8 +140,9 @@ public class UpdateMetadata {
       //TODO: This code will have a problem if the managed metadata property name has a . in it.
       // Pattern should be MM.MyNameSpace.PropName
       String[] split = header.split("\\.");
-      managedMetadataNameSpaces.put(i, split[1]);
-      managedMetadataPropNames.put(i, split[2]);
+      managedMetadataPropTypes.put(i, split[1]);
+      managedMetadataNameSpaces.put(i, split[2]);
+      managedMetadataPropNames.put(i, split[3]);
     }
   }
 
@@ -138,9 +155,14 @@ public class UpdateMetadata {
 
     // Go through all the custom properties first
     for(Map.Entry<Integer, String> entry : customMetadataPropNames.entrySet()) {
-      properties.put(entry.getValue(), line[entry.getKey()].trim());
+      if (!Strings.isNullOrEmpty(line[entry.getKey()].trim())) {
+        properties.put(entry.getValue(), line[entry.getKey()].trim());
+      }
     }
-    updateAttrs.setProperties(properties);
+
+    if (properties.size() > 0) {
+      updateAttrs.setProperties(properties);
+    }
   }
 
   private static void updateManagedProperties(EntityUpdateAttrs updateAttrs, String[] line) {
@@ -149,19 +171,47 @@ public class UpdateMetadata {
     }
 
     Map<String, Map<String, Object>> properties = Maps.newHashMap();
+    Map<String, Object> namespaceVals = Maps.newHashMap();
 
     for(Map.Entry<Integer, String> entry : managedMetadataNameSpaces.entrySet()) {
       String nameSpace = entry.getValue();
-      Map<String, Object> namespaceVals = properties.get(nameSpace);
-      if (namespaceVals == null) {
-        namespaceVals = Maps.newHashMap();
-        properties.put(nameSpace, namespaceVals);
-      }
-
       String propName = managedMetadataPropNames.get(entry.getKey());
-      namespaceVals.put(propName, line[entry.getKey()].trim());
+      if (!Strings.isNullOrEmpty(line[entry.getKey()].trim())) {
+        properties.put(nameSpace, namespaceVals);
+        if (StringUtils.equals(managedMetadataPropTypes.get(entry.getKey()),
+            "TEXT")) {
+          namespaceVals.put(propName, line[entry.getKey()].trim());
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+            .getKey()), "INTEGER")) {
+          namespaceVals.put(propName, Integer.valueOf(line[entry.getKey()]
+              .trim()));
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+                .getKey()),"FLOAT")) {
+          namespaceVals.put(propName, Float.valueOf(line[entry.getKey()]
+              .trim()));
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+                .getKey()),"BOOLEAN")) {
+          namespaceVals.put(propName, Boolean.valueOf(line[entry.getKey()]
+              .trim()));
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+                .getKey()),"LONG")) {
+          namespaceVals.put(propName, Long.valueOf(line[entry.getKey()]
+              .trim()));
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+                .getKey()),"DOUBLE")) {
+          namespaceVals.put(propName, Double.valueOf(line[entry.getKey()]
+              .trim()));
+        } else if (StringUtils.equals(managedMetadataPropTypes.get(entry
+            .getKey()),"DATE")) {
+          namespaceVals.put(propName, Instant.parse(line[entry.getKey()]
+              .trim()));
+        }
+      }
     }
-    updateAttrs.setCustomProperties(properties);
+
+    if (properties.size() > 0) {
+      updateAttrs.setCustomProperties(properties);
+    }
   }
 
   private static String getNextCol(String[] line, int i) {
